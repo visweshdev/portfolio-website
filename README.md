@@ -187,11 +187,3 @@ component to change content.
 This is a standard static-output-capable Next.js app — it deploys as-is to
 [Vercel](https://vercel.com/new) (zero config) or any Node host that can run
 `next build && next start`.
-
-## A note on the content
-
-Photos in `public/photography/` were sent over WhatsApp during development,
-which recompresses images fairly aggressively — if you're replacing them,
-send the originals through something that doesn't recompress (a Document
-attachment, Drive/Photos link, AirDrop, USB) to get the full benefit of the
-`quality={95}` image pipeline.
