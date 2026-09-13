@@ -1,0 +1,239 @@
+@import "tailwindcss";
+
+:root {
+  /* ---- base palette ---- */
+  --color-bg: #080807;
+  --color-bg-raised: #0f0f0e;
+  --color-fg: #f5f5f0;
+  --color-fg-muted: #a6a49c;
+  --color-fg-faint: #58564f;
+  --color-accent: #e8a33d;
+  --color-accent-soft: #f0c07a;
+  --color-accent-red: #d1483f;
+  --color-paper: #ece5d4;
+  --color-paper-2: #e3d9c3;
+  --color-tape: rgba(245, 245, 240, 0.16);
+
+  /* ---- grid ---- */
+  --grid-line: rgba(245, 245, 240, 0.055);
+  --grid-line-strong: rgba(245, 245, 240, 0.12);
+  --grid-size: 72px;
+
+  /* ---- motion ---- */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--color-bg);
+  --color-bg-raised: var(--color-bg-raised);
+  --color-fg: var(--color-fg);
+  --color-fg-muted: var(--color-fg-muted);
+  --color-fg-faint: var(--color-fg-faint);
+  --color-accent: var(--color-accent);
+  --color-accent-soft: var(--color-accent-soft);
+  --color-accent-red: var(--color-accent-red);
+  --color-paper: var(--color-paper);
+  --color-paper-2: var(--color-paper-2);
+
+  --font-display: var(--font-space-grotesk);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-mono-plex);
+  --font-hand: var(--font-caveat);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--color-bg);
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: clip;
+}
+
+::selection {
+  background: var(--color-accent);
+  color: #100c04;
+}
+
+a {
+  color: inherit;
+}
+
+/* ---------------------------------- */
+/* Master grid: one shared max-width  */
+/* + gutter used by every section, so */
+/* content lines up edge-to-edge      */
+/* regardless of viewport width.      */
+/* ---------------------------------- */
+.page-pad {
+  margin-inline: auto;
+  max-width: 1400px;
+  padding-inline: 1.25rem;
+}
+@media (min-width: 768px) {
+  .page-pad {
+    padding-inline: 2rem;
+  }
+}
+
+/* ---------------------------------- */
+/* Subtle technical grid background   */
+/* ---------------------------------- */
+.bg-grid {
+  background-image:
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+  background-size: var(--grid-size) var(--grid-size);
+}
+
+.bg-grid-strong {
+  background-image:
+    linear-gradient(to right, var(--grid-line-strong) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line-strong) 1px, transparent 1px);
+  background-size: var(--grid-size) var(--grid-size);
+}
+
+/* ---------------------------------- */
+/* Paper / collage / tape system      */
+/* ---------------------------------- */
+.paper {
+  background: var(--color-paper);
+  color: #211d14;
+  box-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.2),
+    0 12px 28px -12px rgba(0, 0, 0, 0.55);
+  position: relative;
+}
+
+.paper::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(0, 0, 0, 0.05) 0.5px, transparent 0.5px);
+  background-size: 3px 3px;
+  opacity: 0.5;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+.tape {
+  position: absolute;
+  width: 74px;
+  height: 26px;
+  background: var(--color-tape);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(0.5px);
+}
+
+.tape::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.06) 0px,
+    rgba(255, 255, 255, 0.06) 1px,
+    transparent 1px,
+    transparent 4px
+  );
+}
+
+.torn-edge {
+  clip-path: polygon(
+    0% 2%, 3% 0%, 8% 1.5%, 14% 0%, 20% 1.2%, 27% 0.3%, 34% 1.6%, 41% 0%,
+    48% 1.1%, 55% 0.2%, 62% 1.4%, 69% 0%, 76% 1.2%, 83% 0.4%, 90% 1.5%, 100% 0%,
+    100% 98%, 96% 100%, 90% 98.5%, 84% 100%, 78% 98.6%, 71% 100%, 64% 98.3%,
+    57% 100%, 50% 98.8%, 43% 100%, 36% 98.4%, 29% 100%, 22% 98.7%, 15% 100%,
+    8% 98.5%, 0% 100%
+  );
+}
+
+/* ---------------------------------- */
+/* Metadata / mono labels             */
+/* ---------------------------------- */
+.label-mono {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-fg-muted);
+}
+
+.label-hand {
+  font-family: var(--font-hand), cursive;
+  color: #2a2416;
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+/* ---------------------------------- */
+/* Custom cursor                      */
+/* ---------------------------------- */
+.cursor-dot {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 28px;
+  height: 28px;
+  margin-left: -14px;
+  margin-top: -14px;
+  border-radius: 999px;
+  background: rgba(110, 110, 110, 0.55);
+  pointer-events: none;
+  z-index: 200;
+  will-change: transform;
+  transition: width 0.2s var(--ease-out-soft), height 0.2s var(--ease-out-soft),
+    margin 0.2s var(--ease-out-soft), background-color 0.2s var(--ease-out-soft);
+}
+
+.has-custom-cursor,
+.has-custom-cursor * {
+  cursor: none !important;
+}
+
+/* ---------------------------------- */
+/* Utility: hide scrollbar on rails   */
+/* ---------------------------------- */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ---------------------------------- */
+/* Focus visibility for accessibility */
+/* ---------------------------------- */
+a:focus-visible,
+button:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* ---------------------------------- */
+/* Reduced motion                     */
+/* ---------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
