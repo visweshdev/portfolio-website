@@ -24,7 +24,7 @@ export default function About({ showHeading = true }: { showHeading?: boolean })
             <Sticker tone="red" rotate={-1}>SPEED</Sticker>
           </div>
           <p className="mt-6 max-w-md text-fg-muted leading-relaxed">
-            I&apos;m Viswesh — a Computer Science student who ends up spending
+            A Computer Science student who ends up spending
             most of his time in the gap between an idea and a system that
             actually runs.
           </p>
