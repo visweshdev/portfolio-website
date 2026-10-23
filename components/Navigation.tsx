@@ -2,17 +2,34 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { navLinks, contact } from "@/data/nav";
-import { scrollToTop } from "@/lib/lenisInstance";
+import { scrollToSection, scrollToTop } from "@/lib/lenisInstance";
 import { useReducedMotion } from "@/lib/useReducedMotion";
 import { playSound } from "@/lib/sound";
 import SoundToggle from "@/components/SoundToggle";
 
 export default function Navigation() {
-  const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  // The menu remembers WHICH route it was opened on, so it's closed
+  // automatically on any route change — including back/forward, which
+  // never goes through a link's onClick.
+  const [openOn, setOpenOn] = useState<string | null>(null);
+  const open = openOn === pathname;
+  const setOpen = useCallback((next: boolean) => setOpenOn(next ? pathname : null), [pathname]);
   const reducedMotion = useReducedMotion();
+
+  useEffect(() => {
+    if (!open) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setOpenOn(null);
+        document.getElementById("mobile-nav-toggle")?.focus();
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
 
   // A Link to the current route is otherwise a no-op — this makes the
   // logo always do what it visually promises: take you home, at the top.
@@ -25,16 +42,31 @@ export default function Navigation() {
         scrollToTop(!reducedMotion);
       }
     },
-    [pathname, reducedMotion]
+    [pathname, reducedMotion, setOpen]
+  );
+
+  // On the homepage the section links scroll in place; from any other
+  // page the Link itself goes to "/#section" and Next scrolls there once
+  // the homepage has rendered.
+  const handleSectionClick = useCallback(
+    (e: React.MouseEvent, section: string) => {
+      setOpen(false);
+      playSound("click");
+      if (pathname === "/") {
+        e.preventDefault();
+        scrollToSection(section, !reducedMotion);
+      }
+    },
+    [pathname, reducedMotion, setOpen]
   );
 
   const toggleMenu = useCallback(() => {
     playSound(open ? "click" : "pop");
-    setOpen((v) => !v);
-  }, [open]);
+    setOpen(!open);
+  }, [open, setOpen]);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 py-4 md:py-5">
+    <header className="fixed top-0 left-0 right-0 z-50 py-4 md:py-5" style={{ viewTransitionName: "site-header" }}>
       <nav
         className="page-pad flex items-center justify-between"
         aria-label="Primary"
@@ -51,10 +83,10 @@ export default function Navigation() {
         {/* Desktop links */}
         <ul className="hidden md:flex items-center gap-7">
           {navLinks.map((link) => (
-            <li key={link.href}>
+            <li key={link.section}>
               <Link
-                href={link.href}
-                onClick={() => playSound("click")}
+                href={`/#${link.section}`}
+                onClick={(e) => handleSectionClick(e, link.section)}
                 data-cursor="link"
                 className="label-mono !text-[11px] text-fg-muted hover:text-fg transition-colors"
               >
@@ -77,8 +109,8 @@ export default function Navigation() {
             RESUME ↗
           </a>
           <Link
-            href="/about#contact"
-            onClick={() => playSound("click")}
+            href="/#contact"
+            onClick={(e) => handleSectionClick(e, "contact")}
             data-cursor="link"
             className="label-mono !text-[11px] text-fg-muted hover:text-accent transition-colors"
           >
@@ -88,6 +120,7 @@ export default function Navigation() {
 
         {/* Mobile toggle */}
         <button
+          id="mobile-nav-toggle"
           type="button"
           onClick={toggleMenu}
           aria-expanded={open}
@@ -106,12 +139,9 @@ export default function Navigation() {
           >
             {navLinks.map((link) => (
               <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => {
-                  playSound("click");
-                  setOpen(false);
-                }}
+                key={link.section}
+                href={`/#${link.section}`}
+                onClick={(e) => handleSectionClick(e, link.section)}
                 className="label-mono !text-sm py-2 text-fg"
               >
                 {link.label}
@@ -128,18 +158,15 @@ export default function Navigation() {
               RESUME ↗
             </a>
             <Link
-              href="/about#contact"
-              onClick={() => {
-                playSound("click");
-                setOpen(false);
-              }}
+              href="/#contact"
+              onClick={(e) => handleSectionClick(e, "contact")}
               className="label-mono !text-sm py-2 text-fg"
             >
               CONTACT ↗
             </Link>
             <div className="h-px bg-fg-faint/30 my-2" />
             <div className="flex items-center justify-between py-1">
-              <span className="label-mono text-fg-faint">SOUND EFFECTS</span>
+              <span className="label-mono text-fg-subtle">SOUND EFFECTS</span>
               <SoundToggle />
             </div>
           </div>

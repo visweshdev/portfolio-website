@@ -1,19 +1,18 @@
-import Image from "next/image";
-import type { Photo } from "@/data/photography";
-import { CameraIcon } from "@/components/icons";
+"use client";
 
-const CATEGORY_LABEL: Record<Photo["category"], string> = {
-  street: "STREET",
-  motorsport: "MOTORSPORT",
-  study: "CAMPUS",
-  travel: "TRAVEL",
-};
+import Image from "next/image";
+import { useState } from "react";
+import { CATEGORY_LABEL, type Photo } from "@/data/photography";
+import { CameraIcon } from "@/components/icons";
+import PhotoLightbox from "@/components/PhotoLightbox";
+import { playSound } from "@/lib/sound";
 
 /**
- * Renders a photograph inside a paper/polaroid frame. While `src` is
- * null this renders an explicit, clearly-labeled placeholder — never
- * a stand-in stock photo — so it's obvious which slots still need a
- * real image dropped into /public/photography/.
+ * Renders a photograph inside a paper/polaroid frame. Clicking a real
+ * photo opens it full-screen in a lightbox. While `src` is null this
+ * renders an explicit, clearly-labeled placeholder — never a stand-in
+ * stock photo — so it's obvious which slots still need a real image
+ * dropped into /public/photography/.
  *
  * `sizes` should reflect how wide THIS particular photo actually
  * renders in its grid position — the asymmetric layout means the
@@ -31,35 +30,42 @@ export default function PolaroidImage({
   className?: string;
   sizes?: string;
 }) {
+  const [open, setOpen] = useState(false);
+
   return (
     <figure
-      data-cursor="view"
       className={`paper p-3 pb-5 w-full transition-transform duration-500 ease-out hover:-translate-y-2 hover:scale-[1.02] ${className}`}
       style={{ transform: `rotate(${photo.rotation}deg)` }}
     >
-      <div className="relative aspect-[4/5] w-full overflow-hidden bg-[#d8cfb8]">
-        {photo.src ? (
-          <Image
-            src={photo.src}
-            alt={photo.caption}
-            fill
-            quality={95}
-            sizes={sizes}
-            className="object-cover"
-          />
-        ) : (
+      {photo.src ? (
+        <button
+          type="button"
+          onClick={() => {
+            playSound("pop");
+            setOpen(true);
+          }}
+          data-cursor="view"
+          aria-label={`View photo: ${photo.caption}`}
+          className="relative block aspect-[4/5] w-full overflow-hidden bg-[#d8cfb8]"
+        >
+          <Image src={photo.src} alt={photo.caption} fill quality={95} sizes={sizes} className="object-cover" />
+        </button>
+      ) : (
+        <div className="relative aspect-[4/5] w-full overflow-hidden bg-[#d8cfb8]">
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-[#8a8064]">
             <CameraIcon className="w-9 h-auto opacity-60" />
-            <span className="label-mono !text-[9px] !text-[#8a8064]">PLACEHOLDER — IMAGE PENDING</span>
+            <span className="label-mono !text-[9px] !text-[#6b6350]">PLACEHOLDER — IMAGE PENDING</span>
           </div>
-        )}
-      </div>
+        </div>
+      )}
       <figcaption className="mt-2.5 flex items-end justify-between gap-2">
         <span className="label-hand text-base">{photo.caption}</span>
         <span className="label-mono !text-[9px] !text-[#6b6350] whitespace-nowrap">
           {CATEGORY_LABEL[photo.category]} · {photo.year}
         </span>
       </figcaption>
+
+      {open && <PhotoLightbox photo={photo} onClose={() => setOpen(false)} />}
     </figure>
   );
 }

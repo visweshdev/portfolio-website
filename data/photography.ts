@@ -9,6 +9,13 @@ export type Photo = {
   rotation: number; // degrees, small values only — controlled imperfection
 };
 
+export const CATEGORY_LABEL: Record<Photo["category"], string> = {
+  street: "STREET",
+  motorsport: "MOTORSPORT",
+  study: "CAMPUS",
+  travel: "TRAVEL",
+};
+
 /**
  * Real photographs, served from /public/photography/. Add more the same
  * way: drop the file in that folder and add an entry here — no

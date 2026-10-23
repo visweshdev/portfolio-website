@@ -65,42 +65,34 @@ export default function WordGuessGame() {
   const submit = useCallback(() => {
     if (current.length !== WORD_LEN || status !== "playing") return;
     const guess = current.toUpperCase();
-    setGuesses((prev) => {
-      const next = [...prev, guess];
-      if (guess === target) {
-        setStatus("won");
-        playSound("success");
-      } else if (next.length >= MAX_GUESSES) {
-        setStatus("lost");
-        playSound("fail");
-      } else {
-        playSound("click");
-      }
-      return next;
-    });
+    const next = [...guesses, guess];
+    setGuesses(next);
     setCurrent("");
-  }, [current, status, target]);
+    if (guess === target) {
+      setStatus("won");
+      playSound("success");
+    } else if (next.length >= MAX_GUESSES) {
+      setStatus("lost");
+      playSound("fail");
+    } else {
+      playSound("click");
+    }
+  }, [current, guesses, status, target]);
 
   const typeLetter = useCallback(
     (letter: string) => {
-      if (status !== "playing") return;
-      setCurrent((c) => {
-        if (c.length >= WORD_LEN) return c;
-        playSound("click");
-        return c + letter;
-      });
+      if (status !== "playing" || current.length >= WORD_LEN) return;
+      setCurrent(current + letter);
+      playSound("click");
     },
-    [status]
+    [status, current]
   );
 
   const backspace = useCallback(() => {
-    if (status !== "playing") return;
-    setCurrent((c) => {
-      if (c.length === 0) return c;
-      playSound("click");
-      return c.slice(0, -1);
-    });
-  }, [status]);
+    if (status !== "playing" || current.length === 0) return;
+    setCurrent(current.slice(0, -1));
+    playSound("click");
+  }, [status, current]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {

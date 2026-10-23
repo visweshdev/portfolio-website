@@ -107,41 +107,41 @@ export default function TwentyFortyEightGame() {
   const [best, reportBest] = useBestScore("portfolio-2048-best", true);
   const [status, setStatus] = useState<"playing" | "won" | "lost">("playing");
   const wonAnnounced = useRef(false);
-  const scoreRef = useRef(0);
+  const boardRef = useRef<HTMLDivElement>(null);
 
   const reset = useCallback(() => {
     setBoard(freshBoard());
     setScore(0);
-    scoreRef.current = 0;
     setStatus("playing");
     wonAnnounced.current = false;
   }, []);
 
+  // The next board is computed up front and side effects (score, sound,
+  // status) run once afterwards — not inside a setState updater, which
+  // React may call twice and which previously double-counted the score.
   const applyMove = useCallback(
     (mover: (b: Board) => { board: Board; moved: boolean; gained: number }) => {
       if (status === "lost") return;
-      setBoard((prev) => {
-        const { board: moved, moved: didMove, gained } = mover(prev);
-        if (!didMove) return prev;
-        const withTile = addRandomTile(cloneBoard(moved));
-        if (gained) {
-          scoreRef.current += gained;
-          setScore(scoreRef.current);
-          reportBest(scoreRef.current);
-          playSound("pop");
-        }
-        if (!wonAnnounced.current && withTile.some((row) => row.some((v) => v >= 2048))) {
-          wonAnnounced.current = true;
-          setStatus("won");
-          playSound("success");
-        } else if (!canMove(withTile)) {
-          setStatus("lost");
-          playSound("fail");
-        }
-        return withTile;
-      });
+      const { board: moved, moved: didMove, gained } = mover(board);
+      if (!didMove) return;
+      const withTile = addRandomTile(cloneBoard(moved));
+      setBoard(withTile);
+      if (gained) {
+        const nextScore = score + gained;
+        setScore(nextScore);
+        reportBest(nextScore);
+        playSound("pop");
+      }
+      if (!wonAnnounced.current && withTile.some((row) => row.some((v) => v >= 2048))) {
+        wonAnnounced.current = true;
+        setStatus("won");
+        playSound("success");
+      } else if (!canMove(withTile)) {
+        setStatus("lost");
+        playSound("fail");
+      }
     },
-    [status, reportBest]
+    [board, score, status, reportBest]
   );
 
   const handleDir = useCallback(
@@ -177,7 +177,7 @@ export default function TwentyFortyEightGame() {
       if (Math.abs(dx) > Math.abs(dy)) handleDir(dx > 0 ? "right" : "left");
       else handleDir(dy > 0 ? "down" : "up");
     }
-    const el = document.getElementById("game-2048-board");
+    const el = boardRef.current;
     el?.addEventListener("touchstart", onStart, { passive: true });
     el?.addEventListener("touchend", onEnd, { passive: true });
     return () => {
@@ -194,7 +194,7 @@ export default function TwentyFortyEightGame() {
       controlsLegend="ARROWS OR SWIPE TO SLIDE"
       touchControls={<TouchDpad onDir={handleDir} showUp />}
     >
-      <div id="game-2048-board" className="p-3 md:p-4">
+      <div ref={boardRef} className="p-3 md:p-4">
         <div className="grid grid-cols-4 gap-2 max-w-[320px] mx-auto">
           {board.map((row, r) =>
             row.map((v, c) => (

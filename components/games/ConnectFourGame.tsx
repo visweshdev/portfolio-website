@@ -78,27 +78,28 @@ export default function ConnectFourGame() {
     setDraw(false);
   }, []);
 
+  // Builds the next board from the current one and then runs sounds and
+  // turn changes once — not inside a setState updater, which React may
+  // call twice.
   const drop = useCallback(
     (col: number, player: Cell) => {
-      setBoard((prev) => {
-        const row = lowestEmptyRow(prev, col);
-        if (row === -1) return prev;
-        const next = prev.map((r) => [...r]);
-        next[row][col] = player;
-        const win = checkWinner(next);
-        playSound("pop");
-        if (win) {
-          setWinner(win);
-          playSound(win === 1 ? "success" : "fail");
-        } else if (validCols(next).length === 0) {
-          setDraw(true);
-        } else {
-          setTurn(player === 1 ? 2 : 1);
-        }
-        return next;
-      });
+      const row = lowestEmptyRow(board, col);
+      if (row === -1) return;
+      const next = board.map((r) => [...r]);
+      next[row][col] = player;
+      setBoard(next);
+      const win = checkWinner(next);
+      playSound("pop");
+      if (win) {
+        setWinner(win);
+        playSound(win === 1 ? "success" : "fail");
+      } else if (validCols(next).length === 0) {
+        setDraw(true);
+      } else {
+        setTurn(player === 1 ? 2 : 1);
+      }
     },
-    []
+    [board]
   );
 
   const playerMove = useCallback(

@@ -50,8 +50,11 @@ export default function Reveal({ children, className = "", y = 28, delay = 0, as
   }, [y, delay]);
 
   const Comp = as;
+  // `data-reveal` lets globals.css hide this before first paint (only
+  // when JS is running and motion is allowed), so there's no flash of
+  // visible content that then disappears when this effect runs.
   return (
-    <Comp ref={ref as never} className={className}>
+    <Comp ref={ref as never} className={className} data-reveal="">
       {children}
     </Comp>
   );

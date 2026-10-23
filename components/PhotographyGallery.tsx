@@ -1,59 +1,37 @@
-"use client";
-
-import Link from "next/link";
 import { photography } from "@/data/photography";
 import PolaroidImage from "@/components/PolaroidImage";
 import SectionLabel from "@/components/SectionLabel";
 import GridBackground from "@/components/GridBackground";
 import Reveal from "@/components/Reveal";
 import Magnetic from "@/components/Magnetic";
-import { playSound } from "@/lib/sound";
-
-// Asymmetric editorial spans — one clear feature frame, the rest
-// supporting it at different weights. Mobile always stacks to full width.
-const SPANS = [
-  "col-span-12 sm:col-span-7",
-  "col-span-12 sm:col-span-5 sm:mt-16",
-  "col-span-6 sm:col-span-4",
-  "col-span-6 sm:col-span-4 sm:mt-10",
-  "col-span-12 sm:col-span-4",
-];
-
-// How wide each of the above spans actually renders — kept in step so
-// next/image fetches a resolution that matches the real display size
-// instead of guessing one flat value for every photo.
-const SIZES = [
-  "(max-width: 640px) 100vw, 55vw",
-  "(max-width: 640px) 100vw, 42vw",
-  "(max-width: 640px) 50vw, 33vw",
-  "(max-width: 640px) 50vw, 33vw",
-  "(max-width: 640px) 100vw, 33vw",
-];
+import SoundLink from "@/components/SoundLink";
+import { photoSlot } from "@/lib/photoGrid";
+import SplitHeading from "@/components/SplitHeading";
+import PhotoWallSection from "@/components/PhotoWallSection";
 
 export default function PhotographyGallery() {
   const photos = photography.slice(0, 5);
 
   return (
-    <section id="photography" className="relative py-24 md:py-32 bg-bg" aria-label="Photography">
+    <section id="photography" className="relative py-24 md:py-32 bg-bg/75" aria-label="Photography">
       <GridBackground strong className="opacity-50" />
       <div className="page-pad relative">
         <Reveal>
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <SectionLabel index="03" title="THROUGH THE LENS" />
-              <h2 className="font-display text-5xl md:text-7xl mt-5 leading-[0.98] max-w-2xl">
+              <SectionLabel index="02" title="THROUGH THE LENS" />
+              <SplitHeading as="h2" className="font-display text-5xl md:text-7xl mt-5 leading-[0.98] max-w-2xl">
                 The other half of how I look at things.
-              </h2>
+              </SplitHeading>
             </div>
             <Magnetic>
-              <Link
+              <SoundLink
                 href="/photography"
-                onClick={() => playSound("click")}
                 data-cursor="link"
                 className="label-mono border border-fg-faint rounded-full px-5 py-2.5 hover:border-accent hover:text-accent transition-colors whitespace-nowrap block"
               >
                 ALL PHOTOGRAPHY ↗
-              </Link>
+              </SoundLink>
             </Magnetic>
           </div>
           <p className="mt-4 max-w-md text-fg-muted leading-relaxed">
@@ -62,12 +40,19 @@ export default function PhotographyGallery() {
           </p>
         </Reveal>
 
-        <div className="mt-16 grid grid-cols-12 gap-6 md:gap-10">
-          {photos.map((photo, i) => (
-            <Reveal key={photo.id} delay={i * 0.06} className={SPANS[i] ?? "col-span-6"}>
-              <PolaroidImage photo={photo} sizes={SIZES[i]} />
-            </Reveal>
-          ))}
+        {/* the 3D wall — on mouse/trackpad screens with full motion it
+            replaces the print grid below (see PhotoWallSection) */}
+        <PhotoWallSection photos={photos} />
+
+        <div className="photo-grid mt-16 grid grid-cols-12 gap-6 md:gap-10">
+          {photos.map((photo, i) => {
+            const { span, sizes } = photoSlot(i);
+            return (
+              <Reveal key={photo.id} delay={i * 0.06} className={span}>
+                <PolaroidImage photo={photo} sizes={sizes} />
+              </Reveal>
+            );
+          })}
         </div>
       </div>
     </section>

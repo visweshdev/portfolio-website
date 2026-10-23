@@ -27,8 +27,11 @@ export default function GameFrame({
   return (
     <div className="w-full max-w-md mx-auto select-none">
       <div className="flex items-center justify-between mb-3">
-        <p className="font-display text-xl">{title}</p>
-        <p className="label-mono text-accent">{status}</p>
+        <h2 className="font-display text-xl">{title}</h2>
+        {/* announced to screen readers as score / turn / result changes */}
+        <p className="label-mono text-accent" role="status" aria-live="polite">
+          {status}
+        </p>
       </div>
 
       <div className="rounded-xl border border-fg-faint/40 bg-bg-raised p-3 md:p-4">
