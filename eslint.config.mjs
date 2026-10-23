@@ -19,7 +19,10 @@ const eslintConfig = defineConfig([
     // the standard, performant pattern for this, but incompatible with the
     // React Compiler's strict immutability assumptions. These components
     // are plain client-side game loops, not compiler memoization targets.
-    files: ["components/games/**/*.tsx"],
+    // The same holds for the three.js scenes: @react-three/fiber's
+    // useFrame loop mutates refs, buffers and materials every frame by
+    // design (allocating new objects 60×/s would be far worse).
+    files: ["components/games/**/*.tsx", "components/three/**/*.tsx"],
     rules: {
       "react-hooks/immutability": "off",
     },

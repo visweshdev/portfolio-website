@@ -7,8 +7,9 @@ type Props = {
 };
 
 const TONE_CLASSES: Record<NonNullable<Props["tone"]>, string> = {
-  accent: "bg-accent text-[#160f02]",
-  red: "bg-accent-red text-[#160f02]",
+  // `!` so the dark text beats .label-mono's muted grey on the bright fill
+  accent: "bg-accent !text-[#160f02]",
+  red: "bg-accent-red !text-[#160f02]",
   paper: "paper",
   outline: "border border-fg-faint text-fg-muted bg-bg/60 backdrop-blur-sm",
 };

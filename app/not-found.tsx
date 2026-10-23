@@ -1,9 +1,10 @@
 import Link from "next/link";
 import GridBackground from "@/components/GridBackground";
 import SectionLabel from "@/components/SectionLabel";
+import SplitHeading from "@/components/SplitHeading";
 
 export const metadata = {
-  title: "Page not found — Viswesh Kesarla",
+  title: "Page not found",
 };
 
 export default function NotFound() {
@@ -12,11 +13,11 @@ export default function NotFound() {
       <GridBackground strong className="opacity-50" />
       <div className="relative">
         <SectionLabel index="404" title="OFF TRACK" />
-        <h1 className="font-display text-[16vw] sm:text-8xl md:text-9xl mt-5 leading-[0.9]">
+        <SplitHeading as="h1" className="font-display text-[16vw] sm:text-8xl md:text-9xl mt-5 leading-[0.9]">
           Wrong
           <br />
           turn.
-        </h1>
+        </SplitHeading>
         <p className="mt-6 max-w-md text-fg-muted leading-relaxed">
           Whatever you were looking for isn&apos;t at this address. Let&apos;s
           get you back on the line.

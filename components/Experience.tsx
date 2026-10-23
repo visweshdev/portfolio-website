@@ -4,16 +4,18 @@ import Reveal from "@/components/Reveal";
 import Sticker from "@/components/Sticker";
 import Tape from "@/components/Tape";
 import AnimatedNumber from "@/components/AnimatedNumber";
+import FlowStrip from "@/components/FlowStrip";
+import SplitHeading from "@/components/SplitHeading";
 
 export default function Experience({ showHeading = true }: { showHeading?: boolean }) {
   return (
-    <section className="relative py-20 md:py-28 bg-bg-raised overflow-hidden" aria-label="Work experience">
+    <section id="work" className="relative py-20 md:py-28 bg-bg-raised/80 overflow-hidden" aria-label="Work experience">
       <div className="page-pad grid lg:grid-cols-[1fr_1fr] gap-14 lg:gap-20">
         <Reveal>
-          {showHeading && <SectionLabel index="04" title="WORK EXPERIENCE" />}
-          <h2 className={`font-display text-4xl md:text-6xl leading-[1.02] ${showHeading ? "mt-5" : ""}`}>
+          {showHeading && <SectionLabel index="03" title="WORK EXPERIENCE" />}
+          <SplitHeading as="h2" className={`font-display text-4xl md:text-6xl leading-[1.02] ${showHeading ? "mt-5" : ""}`}>
             {experience.company}
-          </h2>
+          </SplitHeading>
           <p className="label-mono mt-4">{experience.role}</p>
           <p className="label-mono">{experience.period}</p>
           <p className="label-mono">{experience.location}</p>
@@ -59,21 +61,7 @@ export default function Experience({ showHeading = true }: { showHeading?: boole
                 </div>
               ))}
             </div>
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-3">
-              {experience.pipeline.map((step, i) => (
-                <span key={step} className="flex items-center gap-2">
-                  <span className="font-mono text-[11px] md:text-xs px-2.5 py-1.5 rounded border border-fg-faint/40 text-fg-muted">
-                    {step}
-                  </span>
-                  {i < experience.pipeline.length - 1 && (
-                    <span className="text-fg-faint" aria-hidden="true">→</span>
-                  )}
-                </span>
-              ))}
-            </div>
-            <p className="label-mono mt-6 text-fg-faint !text-[10px]">
-              STILL TUNING: RETRIEVAL, PROMPTS, HALLUCINATION RATE
-            </p>
+            <FlowStrip steps={experience.pipeline} loop />
           </div>
         </Reveal>
       </div>

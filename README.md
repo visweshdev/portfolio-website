@@ -14,12 +14,62 @@ build time, and all content lives in typed files under `data/`.
 - **Collage visuals you can drag** — the PaperForge/URL-Shortener project
   scrapbooks are made of individually draggable pieces (pointer events,
   no snap-back), not static images.
-- **A reactive 3D signature curve** in the hero — magnetically drawn toward
-  the cursor, sends a travelling pulse of light down its length on click,
-  and automatically stops rendering once scrolled out of view.
-- **A custom cursor** that changes label depending on what it's over
-  (`VIEW`, `OPEN`, `DRAG`, a directional arrow) — disabled entirely on
-  touch devices and under `prefers-reduced-motion`.
+- **A 3D racing line you drive along** — on the homepage, a glowing track
+  sits behind the whole page and the camera drives down it as you scroll.
+  Each section is a timing gantry the camera passes through as that section
+  reaches the top of the screen; particles stream along the track, the
+  camera sways toward the cursor, and clicking empty space fires a pulse
+  of light down the line. A wireframe F1 car starts parked beside the
+  track: drag it onto the racing line yourself (drop it near the line and
+  it snaps on), or just scroll and it pulls out and merges by itself. On
+  the line it drives just ahead of the camera as you scroll — parked when
+  you stop, pulling away when you
+  scroll fast, drifting tail-out through bends, lurching forward when
+  clicked — up to a chequered finish line painted across the track where
+  the page ends. Wireframe models of a camera, `</>`, a network node, a
+  database stack and a chip float beside the start: they turn to look at
+  the cursor, swell and glow on hover, and spin with a flash when clicked.
+- **An F1 start-lights loading screen** on every page load — five pairs
+  of red lights, a random hold, then lights out and the site appears.
+  Click or press any key to skip; not shown under reduced motion, or on
+  navigations within the site.
+- **A 3D photo wall** on the homepage and /photography — prints hung on a
+  curved wall you drag to look along, with inertia; click one to open it.
+  It replaces the photo grid where it runs (decided in CSS before first
+  paint); everyone else gets the grid.
+- **A 3D arcade cabinet** around every game — marquee, side panels, bezel
+  and control deck in CSS 3D, turning toward the cursor, with the real game
+  playing on its screen. It scales itself down to always fit the window.
+  The homepage game cards open their game in place, no page change.
+- **Scroll-driven motion** — the projects slide sideways in a pinned rail,
+  project pipelines light up stage by stage as a data packet hops along
+  them, headlines rise in word by word, section labels decode like a
+  telemetry readout, a skills ticker speeds up with your scroll (and can
+  be dragged or swiped sideways by hand), and the footer ends on a
+  chequered finish line. The Wipro RAG pipeline instead runs a looping
+  glow from stage to stage while it's on screen.
+- **Section navigation** — the top nav scrolls to each homepage section in
+  place (and comes back to the homepage at that section from other pages).
+  A full load or reload always starts at the top, on the hero: browser and
+  ScrollTrigger scroll restoration are off, and a leftover `#section` in
+  the address is dropped (see the inline script in `app/layout.tsx` and
+  `SmoothScroll.tsx`).
+- **Tactile hover** — project and game cards tilt toward the cursor with a
+  moving highlight; project collages ripple and colour-split in
+  proportion to cursor speed. Photos keep a simple fade-in and hover lift.
+- **Page transitions** — every navigation wipes the new page in over the
+  old one (View Transitions API via React's `<ViewTransition>`).
+
+All of the heavy effects (the track, the photo wall, tilt, distortion,
+the pinned rail) only run for a mouse/trackpad visitor without
+`prefers-reduced-motion` (`lib/useRichMotion.ts`). Phones, tablets and
+reduced-motion visitors get still or simple versions, and never download
+three.js. Note that Windows' "Animation effects" setting being off makes
+browsers report reduced motion, which turns all of this off.
+- **A custom cursor** — a soft dot that grows over anything interactive
+  (any element with a `data-cursor` attribute). Disabled on touch devices;
+  under `prefers-reduced-motion` it snaps to the pointer instead of easing.
+- **A photo lightbox** — click any photograph to view it full-screen.
 - **A small in-browser arcade** — 2048, a Flappy-Bird-style flyer, a
   Wordle-style word game, Memory Match, Connect Four (vs. a simple AI), and
   a reaction-time tester. Each game is its own lazy-loaded chunk; nothing
@@ -32,8 +82,7 @@ build time, and all content lives in typed files under `data/`.
   homepage (it survives client-side navigation).
 - **Magnetic buttons** and scroll-triggered count-up numbers as a couple
   of extra tactile details on the site's key calls to action.
-- Real, editable content for projects, work experience, photography, and a
-  click-for-a-random-fact box on the About page.
+- Real, editable content for projects, work experience and photography.
 
 ## Tech stack
 
@@ -72,9 +121,11 @@ npx tsc --noEmit   # type-check only, no build
 ```
 app/                      Routes (Next.js App Router)
   layout.tsx               Root layout — fonts, <SmoothScroll>, <CustomCursor>, <Navigation>, <Footer>
-  template.tsx              Per-navigation fade-in (Next re-mounts this on every route change)
+  template.tsx              Wraps each page in <ViewTransition> for the page-wipe transition
   page.tsx                  Homepage — composes all the section components below
   not-found.tsx              Custom 404
+  icon.tsx, opengraph-image.tsx   Generated favicon and social-preview card
+  sitemap.ts, robots.ts       Generated /sitemap.xml and /robots.txt
   globals.css                 Design tokens, the shared `.page-pad` grid, paper/tape/cursor utilities
   projects/                 /projects (all work) + /projects/[slug] (project detail, static params)
   work/                     /work — full work-experience page
@@ -87,14 +138,24 @@ components/                One component per file, PascalCase
                              import so each game is its own JS chunk), and the 6 games themselves
   icons.tsx                  Hand-drawn-feeling line icons used as floating decoration
   *Collage.tsx                The PaperForge/URL-Shortener "scrapbook" visuals
+  collages.ts                  Registry mapping a project slug to its collage
   DraggablePiece.tsx           Pointer-events-based drag behavior used by the collages
-  HeroScene.tsx                 The Three.js signature curve
+  three/                      three.js scenes: TrackScene (homepage track), trackPath, HeroObjects,
+                               RacingCar, FinishLine, PhotoWall
+  LightsOut.tsx                F1 start-lights loading screen
+  SplitHeading.tsx, ScrambleLabel.tsx, FlowStrip.tsx   Word-by-word headlines, decoding labels, animated pipelines
+  HorizontalRail.tsx, SkillsTicker.tsx                 Pinned sideways project rail, scroll-reactive ticker
+  Tilt.tsx, HoverDistort.tsx, HoverDistortFilter.tsx   Card tilt, hover ripple/colour-split (+ its shared SVG filter)
+  games/ArcadeCabinet.tsx      The CSS 3D cabinet around an open game
+  games/TeaserGames.tsx        Homepage game cards that open their game in place
   Magnetic.tsx                  Cursor-attraction wrapper used on key CTAs
   AnimatedNumber.tsx             Scroll-triggered count-up used for the Wipro stats
   SoundToggle.tsx                 The nav's sound on/off control
+  SoundLink.tsx                    A next/link that plays a sound — keeps link-only sections Server Components
+  PhotoLightbox.tsx                Full-screen photo view (opened from PolaroidImage)
 
 data/                      All editable content lives here — see "Editing content" below
-  projects.ts, photography.ts, experience.ts, skills.ts, facts.ts, games.ts, nav.ts
+  projects.ts, photography.ts, experience.ts, skills.ts, games.ts, nav.ts
 
 lib/                       Small framework-agnostic hooks/utilities
   gsapConfig.ts               Registers GSAP plugins once (ensureGsap())
@@ -103,6 +164,12 @@ lib/                       Small framework-agnostic hooks/utilities
   sound.ts, useSound.ts           The synthesized sound engine and its React hook
   useReducedMotion.ts, usePointerType.ts, useElapsedSinceStart.ts   SSR-safe hooks built on useSyncExternalStore
   useGameLoop.ts, useBestScore.ts, canvas.ts   Shared arcade infrastructure
+  useRichMotion.ts             Gate for heavy effects: fine pointer and no reduced motion
+  intro.ts                     Shared constants for the lights-out intro
+  carEvents.ts                 Event the hero listens for once the F1 car is on the line
+  useModal.ts                  Scroll lock (incl. Lenis), Escape, focus trap + restore for dialogs
+  photoGrid.ts                 The asymmetric photo grid's spans and matching image `sizes`
+  site.ts                      Site URL, name, description and the Person JSON-LD
 
 public/
   photography/                Real photos served by the site (see below)
@@ -118,15 +185,19 @@ component to change content.
   `data/photography.ts` (`src`, `caption`, `category`, `year`, `rotation`).
   Leaving `src: null` renders an explicit "placeholder" frame instead of a
   broken image, for slots you haven't shot yet.
-- **Projects** — add an entry to `data/projects.ts`. If it needs its own
+- **Projects** — add an entry to `data/projects.ts`. Set `links.repo`
+  and/or `links.demo` to show "SOURCE CODE" / "LIVE DEMO" buttons; `stages`
+  renders as the pipeline strip on the detail page. Set
+  `status: "in-development"` for work in progress: it gets an IN
+  DEVELOPMENT badge and isn't counted as "shipped". Array order is display
+  order, so put what you're working on now first. If it needs its own
   scrapbook visual, build a `<YourProject>Collage.tsx` (see
   `PaperForgeCollage.tsx` for the pattern — wrap each piece in
-  `DraggablePiece`) and register it in the `COLLAGES` map in
-  `ProjectRow.tsx` and `app/projects/[slug]/page.tsx`.
+  `DraggablePiece`) and register it in `components/collages.ts`.
 - **Work experience** — `data/experience.ts`.
-- **About "random facts"** — `data/facts.ts`. Keep them true and short; the
-  box on `/about` cycles through them on click.
-- **Nav links / resume / social links** — `data/nav.ts`.
+- **About text** — written directly in `components/About.tsx`.
+- **Nav links / resume / social links** — `data/nav.ts`. Each nav item
+  names a homepage section `id`; keep those ids on the sections.
 - **Arcade games** — `data/games.ts` holds the catalog metadata; each
   game's actual logic lives in its own file under `components/games/`,
   wired up in `GameLoader.tsx`. `lib/sound.ts` lists the available effects
@@ -138,6 +209,8 @@ component to change content.
 - **Colors** — CSS custom properties in `app/globals.css` (`--color-bg`,
   `--color-fg`, `--color-accent`, etc.), mapped into Tailwind via `@theme
   inline` so they're usable as ordinary utilities (`bg-bg`, `text-accent`, …).
+  `fg-faint` is for lines and borders only; the quietest color for text is
+  `fg-subtle`, which keeps WCAG AA contrast (≥4.5:1).
 - **Grid** — `.page-pad` (in `globals.css`) is the one shared max-width +
   gutter used by every section, so content lines up edge-to-edge across the
   whole site regardless of viewport width. `<GridBackground />` draws the
@@ -159,6 +232,10 @@ component to change content.
 - The Three.js hero scene, and every arcade game, are lazy-loaded
   (`next/dynamic`, `ssr: false`) as separate JS chunks — none of that code
   ships on pages that don't use it.
+- three.js is only loaded for a fine pointer without reduced motion, and the
+  photo wall uses small resized textures from Next's image optimizer.
+- The glow on the 3D track is layered additive tubes rather than a
+  post-processing pass, so there's no extra render target per frame.
 - The hero's 3D render loop pauses automatically (via `IntersectionObserver`)
   once you've scrolled it out of view, instead of rendering every frame for
   the whole session.
@@ -178,6 +255,9 @@ component to change content.
 - The custom cursor and drag interactions are gated on `pointer: fine` —
   touch devices get their platform's native cursor and on-screen game
   controls instead.
+- Dialogs (the arcade, the photo lightbox) trap focus, close on Escape,
+  and return focus to whatever opened them; game status is announced via
+  an `aria-live` region.
 - Sound is opt-in only, never autoplays.
 - Semantic HTML, `aria-label`s on icon-only controls, and visible
   `:focus-visible` states throughout.
@@ -187,3 +267,8 @@ component to change content.
 This is a standard static-output-capable Next.js app — it deploys as-is to
 [Vercel](https://vercel.com/new) (zero config) or any Node host that can run
 `next build && next start`.
+
+Set `NEXT_PUBLIC_SITE_URL` to the public domain (e.g.
+`https://visweshkesarla.com`) so Open Graph images, the sitemap and
+robots.txt use absolute URLs on it. On Vercel it falls back to the
+project's production domain automatically.

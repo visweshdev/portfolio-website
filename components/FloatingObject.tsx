@@ -45,7 +45,7 @@ export default function FloatingObject({
     const gsapInstance = ensureGsap();
 
     // slow idle float
-    gsapInstance.to(wrap, {
+    const tween = gsapInstance.to(wrap, {
       y: "+=10",
       duration: 3.4 + Math.random() * 1.6,
       delay,
@@ -53,6 +53,11 @@ export default function FloatingObject({
       yoyo: true,
       repeat: -1,
     });
+
+    return () => {
+      tween.kill();
+      gsapInstance.set(wrap, { y: 0 });
+    };
   }, [delay, reducedMotion]);
 
   useEffect(() => {

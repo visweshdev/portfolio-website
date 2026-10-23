@@ -93,7 +93,7 @@ export default function PaperForgeCollage({ className = "" }: { className?: stri
         </pre>
       </DraggablePiece>
 
-      <p className="label-mono !text-[9px] text-fg-faint absolute -bottom-6 left-0 hidden md:block">
+      <p className="label-mono !text-[9px] text-fg-subtle absolute -bottom-6 left-0 hidden md:block">
         (EVERYTHING HERE IS DRAGGABLE — GO AHEAD)
       </p>
     </div>

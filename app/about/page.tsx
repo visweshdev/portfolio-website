@@ -4,9 +4,10 @@ import GridBackground from "@/components/GridBackground";
 import Reveal from "@/components/Reveal";
 import About from "@/components/About";
 import Contact from "@/components/Contact";
+import SplitHeading from "@/components/SplitHeading";
 
 export const metadata: Metadata = {
-  title: "About — Viswesh Kesarla",
+  title: "About",
   description: "About Viswesh Kesarla — Computer Science student, AI builder, photographer.",
 };
 
@@ -17,12 +18,12 @@ export default function AboutPage() {
         <GridBackground strong className="opacity-50" />
         <div className="relative">
           <Reveal>
-            <SectionLabel index="06" title="ABOUT" />
-            <h1 className="font-display text-[13vw] sm:text-7xl md:text-8xl mt-5 leading-[0.94]">
+            <SectionLabel index="05" title="ABOUT" />
+            <SplitHeading as="h1" className="font-display text-[13vw] sm:text-7xl md:text-8xl mt-5 leading-[0.94]">
               Hi, I&apos;m
               <br />
               Viswesh.
-            </h1>
+            </SplitHeading>
           </Reveal>
         </div>
       </div>

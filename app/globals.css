@@ -6,7 +6,11 @@
   --color-bg-raised: #0f0f0e;
   --color-fg: #f5f5f0;
   --color-fg-muted: #a6a49c;
+  /* fg-faint is for lines, borders and decoration only — it's ~2.6:1 on
+     the background. fg-subtle is the quietest color allowed for TEXT
+     (≥4.5:1 on both bg and bg-raised, WCAG AA). */
   --color-fg-faint: #58564f;
+  --color-fg-subtle: #85827a;
   --color-accent: #e8a33d;
   --color-accent-soft: #f0c07a;
   --color-accent-red: #d1483f;
@@ -32,6 +36,7 @@
   --color-fg: var(--color-fg);
   --color-fg-muted: var(--color-fg-muted);
   --color-fg-faint: var(--color-fg-faint);
+  --color-fg-subtle: var(--color-fg-subtle);
   --color-accent: var(--color-accent);
   --color-accent-soft: var(--color-accent-soft);
   --color-accent-red: var(--color-accent-red);
@@ -52,8 +57,10 @@ html {
   background: var(--color-bg);
 }
 
+/* No body background on purpose: <html> paints the page color, and the
+   homepage's fixed 3D track (z-index −10) sits between the two. A body
+   background would cover it. Sections set their own (translucent) fills. */
 body {
-  background: var(--color-bg);
   color: var(--color-fg);
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -191,7 +198,8 @@ a {
   border-radius: 999px;
   background: rgba(110, 110, 110, 0.55);
   pointer-events: none;
-  z-index: 200;
+  /* above everything, including the lights-out intro (z 300) */
+  z-index: 400;
   will-change: transform;
   transition: width 0.2s var(--ease-out-soft), height 0.2s var(--ease-out-soft),
     margin 0.2s var(--ease-out-soft), background-color 0.2s var(--ease-out-soft);
@@ -225,6 +233,385 @@ button:focus-visible,
 }
 
 /* ---------------------------------- */
+/* Pre-hydration hidden states        */
+/* ---------------------------------- */
+/* The inline script in app/layout.tsx adds `js` to <html> before first
+   paint. Elements that animate in on mount start hidden here instead of
+   rendering visible and then vanishing when their effect runs. Without
+   JS (or under reduced motion) none of this applies. */
+@media (prefers-reduced-motion: no-preference) {
+  html.js [data-reveal] {
+    opacity: 0;
+  }
+  html.js [data-hero-line] {
+    transform: translateY(110%);
+  }
+}
+
+/* ---------------------------------- */
+/* /photography: 3D wall OR print grid */
+/* ---------------------------------- */
+/* Same conditions as lib/useRichMotion.ts (JS running, mouse/trackpad,
+   no reduced motion), decided before first paint so neither version
+   flashes in and then disappears. Without JS — or if the motion code
+   fails and layout.tsx's script drops `js` — the grid shows. */
+.photo-wall {
+  display: none;
+}
+@media (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  html.js .photo-wall {
+    display: block;
+  }
+  html.js .photo-grid {
+    display: none;
+  }
+}
+
+/* ---------------------------------- */
+/* Lights-out intro (first visit)     */
+/* ---------------------------------- */
+.lights-out {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg);
+}
+html.intro .lights-out {
+  display: flex;
+}
+html.intro,
+html.intro body {
+  overflow: hidden;
+}
+.lights-out__bulb {
+  display: block;
+  width: clamp(26px, 6vw, 52px);
+  aspect-ratio: 1;
+  border-radius: 999px;
+  background: #1f0b09;
+  box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.7);
+  transition: background-color 60ms linear, box-shadow 60ms linear;
+}
+/* each column's two bulbs light together, like the real gantry */
+.lights-out__bulb[data-on="true"],
+.lights-out__bulb[data-on="true"] + .lights-out__bulb--pair {
+  background: #ff2a1f;
+  box-shadow:
+    0 0 22px 5px rgba(255, 42, 31, 0.55),
+    inset 0 -4px 8px rgba(0, 0, 0, 0.25);
+}
+.lights-out__caption {
+  min-height: 1.2em;
+}
+.lights-out__go {
+  display: none;
+  color: var(--color-accent);
+}
+.lights-out[data-out] .lights-out__ready {
+  display: none;
+}
+.lights-out[data-out] .lights-out__go {
+  display: inline;
+}
+
+/* ---------------------------------- */
+/* 3D card tilt highlight             */
+/* ---------------------------------- */
+.tilt {
+  position: relative;
+  will-change: transform;
+}
+.tilt__glare {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s var(--ease-out-soft);
+  background: radial-gradient(
+    circle at var(--glare-x, 50%) var(--glare-y, 50%),
+    rgba(245, 245, 240, 0.1),
+    transparent 55%
+  );
+}
+.tilt[data-tilting] .tilt__glare {
+  opacity: 1;
+}
+
+/* ---------------------------------- */
+/* Horizontal project rail            */
+/* ---------------------------------- */
+/* HorizontalRail adds `is-rail` only on large fine-pointer screens with
+   full motion; otherwise the projects stack vertically as normal. */
+.h-rail__track.is-rail {
+  display: flex;
+  width: max-content;
+  gap: 5vw;
+  will-change: transform;
+}
+.h-rail__track.is-rail > * {
+  flex: none;
+  width: min(1150px, 78vw);
+  border-top: 0;
+  padding-block: 1.5rem;
+}
+.h-rail__track.is-rail .project-collage {
+  max-width: 54vh;
+  justify-self: center;
+  width: 100%;
+}
+
+/* ---------------------------------- */
+/* Skills ticker / finish line        */
+/* ---------------------------------- */
+.ticker-outline {
+  color: transparent;
+  -webkit-text-stroke: 1px var(--color-fg-subtle);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ticker-track {
+    width: auto;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .ticker-track > ul {
+    flex-wrap: wrap;
+    justify-content: center;
+    row-gap: 0.75rem;
+  }
+  .ticker-track > ul + ul {
+    display: none;
+  }
+}
+
+.finish-line {
+  height: 14px;
+  opacity: 0.85;
+  background-color: var(--color-bg);
+  background-image: conic-gradient(
+    var(--color-fg) 0 25%,
+    transparent 0 50%,
+    var(--color-fg) 0 75%,
+    transparent 0
+  );
+  background-size: 14px 14px;
+  animation: finish-drift 8s linear infinite;
+}
+@keyframes finish-drift {
+  to {
+    background-position: 140px 0;
+  }
+}
+
+/* ---------------------------------- */
+/* 3D arcade cabinet                  */
+/* ---------------------------------- */
+.cabinet-stage {
+  perspective: 1400px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  /* centres vertically when there's room, but (unlike justify-content:
+     center on the dialog) lets a cabinet taller than the screen scroll
+     from its top instead of being cut off above */
+  margin-block: auto;
+}
+.cabinet {
+  position: relative;
+  transform-style: preserve-3d;
+  width: min(100%, 34rem);
+}
+.cabinet__marquee {
+  position: relative;
+  margin-inline: 1.25rem;
+  padding: 0.7rem 1rem;
+  border-radius: 14px 14px 0 0;
+  text-align: center;
+  background: linear-gradient(180deg, #2a1c08, #140d04);
+  border: 1px solid rgba(232, 163, 61, 0.5);
+  border-bottom: 0;
+  box-shadow:
+    0 0 28px -6px rgba(232, 163, 61, 0.55),
+    inset 0 0 22px rgba(232, 163, 61, 0.25);
+  transform: translateZ(18px);
+}
+.cabinet__marquee span {
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.4rem;
+  letter-spacing: 0.12em;
+  color: var(--color-accent-soft);
+  text-shadow:
+    0 0 8px rgba(232, 163, 61, 0.9),
+    0 0 22px rgba(232, 163, 61, 0.5);
+}
+.cabinet__body {
+  position: relative;
+  transform-style: preserve-3d;
+  padding: 1.25rem 1.25rem 0;
+  border-radius: 18px 18px 10px 10px;
+  background: linear-gradient(180deg, #161614, #0c0c0b);
+  border: 1px solid rgba(245, 245, 240, 0.1);
+}
+.cabinet__side {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 70px;
+  background: linear-gradient(90deg, #1b1b18, #0a0a09);
+  border: 1px solid rgba(245, 245, 240, 0.08);
+}
+.cabinet__side--left {
+  left: 0;
+  transform-origin: left center;
+  transform: rotateY(90deg);
+}
+.cabinet__side--right {
+  right: 0;
+  transform-origin: right center;
+  transform: rotateY(-90deg);
+}
+.cabinet__bezel {
+  padding: 0.75rem;
+  border-radius: 12px;
+  background: #050504;
+  box-shadow:
+    inset 0 0 0 1px rgba(245, 245, 240, 0.08),
+    inset 0 0 40px rgba(0, 0, 0, 0.9);
+}
+.cabinet__screen {
+  position: relative;
+  border-radius: 6px;
+  /* faint scanlines over the screen, like a CRT */
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(255, 255, 255, 0.015) 0 1px,
+    transparent 1px 3px
+  );
+}
+.cabinet__deck {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 1rem -1.25rem 0;
+  padding: 1rem 2.25rem 1.1rem;
+  border-radius: 0 0 10px 10px;
+  background: linear-gradient(180deg, #1d1d1a, #10100e);
+  border-top: 1px solid rgba(245, 245, 240, 0.1);
+  transform-origin: top center;
+  transform: rotateX(28deg);
+}
+.cabinet__stick {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: #0a0a09;
+  box-shadow: inset 0 0 0 2px rgba(245, 245, 240, 0.12);
+  margin-right: auto;
+}
+.cabinet__stick::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  margin: -8px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 35% 35%, #ff6b5f, var(--color-accent-red));
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.6);
+}
+.cabinet__btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  box-shadow:
+    inset 0 -3px 4px rgba(0, 0, 0, 0.45),
+    0 0 10px -2px currentColor;
+}
+.cabinet__btn--a {
+  background: var(--color-accent);
+  color: var(--color-accent);
+}
+.cabinet__btn--b {
+  background: var(--color-accent-red);
+  color: var(--color-accent-red);
+}
+.cabinet__btn--c {
+  background: var(--color-paper);
+  color: rgba(236, 229, 212, 0.6);
+}
+@media (max-width: 639px) {
+  .cabinet__side,
+  .cabinet__deck {
+    display: none;
+  }
+  .cabinet__body {
+    padding: 0.75rem 0.75rem 0.75rem;
+  }
+  .cabinet__bezel {
+    padding: 0.4rem;
+  }
+  .cabinet__marquee span {
+    font-size: 1.1rem;
+  }
+}
+
+/* ---------------------------------- */
+/* Page transitions (View Transitions) */
+/* ---------------------------------- */
+/* app/template.tsx wraps every page in <ViewTransition> with the
+   `page-wipe` class: the old page slides back and dims while the new
+   one wipes in over it from the left. The header is
+   anchored so the content visibly moves, not the whole window. */
+::view-transition {
+  pointer-events: none;
+}
+::view-transition-old(.page-wipe) {
+  animation: page-out 0.55s var(--ease-out-expo) both;
+}
+::view-transition-new(.page-wipe) {
+  animation: page-in 0.7s var(--ease-out-expo) both;
+}
+::view-transition-group(site-header) {
+  animation: none;
+  z-index: 100;
+}
+::view-transition-old(site-header) {
+  display: none;
+}
+::view-transition-new(site-header) {
+  animation: none;
+}
+@keyframes page-out {
+  to {
+    opacity: 0.25;
+    translate: -4% 0;
+    filter: blur(2px);
+  }
+}
+@keyframes page-in {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+}
+
+/* ---------------------------------- */
 /* Reduced motion                     */
 /* ---------------------------------- */
 @media (prefers-reduced-motion: reduce) {
@@ -236,4 +623,35 @@ button:focus-visible,
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Arriving at "/#section" from another page: keep the section's label
+   clear of the fixed header. Lenis (scrollToSection) honours this too. */
+main section[id] {
+  scroll-margin-top: 72px;
+}
+
+/* Cursor over one of the hero's 3D models (HeroObjects.tsx): grow the
+   dot like it does over links — the model can't carry data-cursor, as
+   it lives in a canvas behind the page. */
+html.hero-object-hover .cursor-dot {
+  width: 40px !important;
+  height: 40px !important;
+  margin-left: -20px !important;
+  margin-top: -20px !important;
+  background: rgba(232, 163, 61, 0.45) !important;
+}
+
+/* Cursor over / dragging the parked F1 car (RacingCar.tsx). */
+html.car-hover .cursor-dot,
+html.car-dragging .cursor-dot {
+  width: 40px !important;
+  height: 40px !important;
+  margin-left: -20px !important;
+  margin-top: -20px !important;
+  background: rgba(232, 163, 61, 0.45) !important;
+}
+html.car-dragging,
+html.car-dragging * {
+  user-select: none;
 }

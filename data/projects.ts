@@ -17,12 +17,52 @@ export type Project = {
   process: string[];
   result: string;
   handLabel: string; // small handwritten-style annotation
+  // "in-development" shows an IN DEVELOPMENT badge and leaves the project
+  // out of the "projects shipped" count. Omit for finished projects.
+  status?: "in-development";
+  // Public source / live deployment. Either can be left out — only the
+  // links that exist are rendered.
+  links?: {
+    repo?: string;
+    demo?: string;
+  };
 };
 
 export const projects: Project[] = [
   {
-    slug: "paperforge",
+    slug: "recoverrl",
     index: "01",
+    title: "RecoverRL",
+    year: "2026",
+    tagline: "FAILURE → FEATURES → LEARNED POLICY → VERIFY",
+    stack: ["Python", "Google ADK", "Gemini", "scikit-learn", "Contextual bandits"],
+    status: "in-development",
+    summary:
+      "Agents that learn how to recover: when a tool call or multi-step workflow fails, a learned policy picks the right recovery strategy instead of blindly retrying.",
+    stages: [
+      { label: "TOOL CALL FAILS" },
+      { label: "FAILURE FEATURES", note: "error, history, environment state" },
+      { label: "LEARNED POLICY", note: "retry · inspect · refresh schema · replan · escalate" },
+      { label: "VERIFY COMPLETION" },
+    ],
+    idea: "A typical agent handles failure the same way every time — retry the API call, ask the LLM to reflect, or restart the whole task. RecoverRL learns to choose the right response from the failure itself, the execution history, and the current state of the environment.",
+    system: [
+      "When a tool call fails, features are extracted from the error, the execution trace so far, and the environment state.",
+      "A learned recovery policy — supervised learning or a contextual bandit trained on execution traces — selects one action: retry, inspect state, refresh the schema, replan, or escalate.",
+      "Task completion is then verified, so a recovery only counts if the task actually finishes.",
+    ],
+    process: [
+      "Built on the existing AgentGauntlet benchmark rather than a new failure-testing framework — the contribution is the learned policy and its results.",
+      "The policy is compared against fixed retries, rule-based recovery, and LLM self-reflection.",
+      "Evaluation tracks task recovery rate, cost per successful recovery, duplicate side effects, and performance on unfamiliar tools and task types.",
+    ],
+    result:
+      "In development — the recovery policy and its comparison against baseline strategies are being built and evaluated now.",
+    handLabel: "fail → learn → recover",
+  },
+  {
+    slug: "paperforge",
+    index: "02",
     title: "PaperForge AI",
     year: "2026",
     tagline: "RESEARCH → RETRIEVAL → CODE",
@@ -54,7 +94,7 @@ export const projects: Project[] = [
   },
   {
     slug: "url-shortener",
-    index: "02",
+    index: "03",
     title: "URL Shortener",
     year: "2026",
     tagline: "URL → HASH → DATABASE → REDIRECT",
@@ -79,6 +119,9 @@ export const projects: Project[] = [
     result:
       "A compact, well-structured full-stack artifact: URL in, short hash out, reliable redirect back — with the CI/CD discipline of a much larger system.",
     handLabel: "shrink & redirect",
+    links: {
+      repo: "https://github.com/visweshdev/url-shortener",
+    },
   },
 ];
 

@@ -4,14 +4,11 @@ import { projects, getProject } from "@/data/projects";
 import Sticker from "@/components/Sticker";
 import Reveal from "@/components/Reveal";
 import GridBackground from "@/components/GridBackground";
-import PaperForgeCollage from "@/components/PaperForgeCollage";
-import URLShortenerCollage from "@/components/URLShortenerCollage";
 import SoundLink from "@/components/SoundLink";
-
-const COLLAGES: Record<string, React.ComponentType<{ className?: string }>> = {
-  paperforge: PaperForgeCollage,
-  "url-shortener": URLShortenerCollage,
-};
+import FlowStrip from "@/components/FlowStrip";
+import ProjectLinks from "@/components/ProjectLinks";
+import { COLLAGES } from "@/components/collages";
+import SplitHeading from "@/components/SplitHeading";
 
 export function generateStaticParams() {
   return projects.map((p) => ({ slug: p.slug }));
@@ -26,7 +23,7 @@ export async function generateMetadata({
   const project = getProject(slug);
   if (!project) return {};
   return {
-    title: `${project.title} — Viswesh Kesarla`,
+    title: project.title,
     description: project.summary,
   };
 }
@@ -53,8 +50,13 @@ export default async function ProjectPage({
           <div className="flex items-baseline gap-3 label-mono mt-6 mb-4">
             <span className="text-accent">{project.index}</span>
             <span>{project.year}</span>
+            {project.status === "in-development" && (
+              <span className="label-mono !text-[10px] !text-accent border border-accent/60 rounded-full px-2.5 py-0.5">
+                IN DEVELOPMENT
+              </span>
+            )}
           </div>
-          <h1 className="font-display text-[13vw] sm:text-7xl md:text-8xl leading-[0.94]">{project.title}</h1>
+          <SplitHeading as="h1" className="font-display text-[13vw] sm:text-7xl md:text-8xl leading-[0.94]">{project.title}</SplitHeading>
           <p className="label-mono mt-5 text-fg-muted">{project.tagline}</p>
           <div className="mt-6 flex flex-wrap gap-2">
             {project.stack.map((tech, i) => (
@@ -63,6 +65,7 @@ export default async function ProjectPage({
               </Sticker>
             ))}
           </div>
+          <ProjectLinks links={project.links} className="mt-8" />
         </Reveal>
 
         {Collage && (
@@ -75,6 +78,11 @@ export default async function ProjectPage({
           <Reveal className="grid md:grid-cols-[160px_1fr] gap-x-10">
             <p className="label-mono text-accent">THE IDEA</p>
             <p className="text-lg md:text-xl leading-relaxed text-fg max-w-2xl">{project.idea}</p>
+          </Reveal>
+
+          <Reveal className="grid md:grid-cols-[160px_1fr] gap-x-10 gap-y-4">
+            <p className="label-mono text-accent">THE PIPELINE</p>
+            <FlowStrip steps={project.stages} className="max-w-2xl" />
           </Reveal>
 
           <Reveal className="grid md:grid-cols-[160px_1fr] gap-x-10">
@@ -102,7 +110,7 @@ export default async function ProjectPage({
           </Reveal>
 
           <Reveal className="grid md:grid-cols-[160px_1fr] gap-x-10">
-            <p className="label-mono text-accent">THE RESULT</p>
+            <p className="label-mono text-accent">{project.status === "in-development" ? "WHERE IT STANDS" : "THE RESULT"}</p>
             <p className="text-lg md:text-xl leading-relaxed text-fg max-w-2xl">{project.result}</p>
           </Reveal>
         </div>

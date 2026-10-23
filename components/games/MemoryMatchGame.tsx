@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import GameFrame from "@/components/games/GameFrame";
 import { playSound } from "@/lib/sound";
 import {
@@ -27,9 +27,20 @@ export default function MemoryMatchGame() {
   const [moves, setMoves] = useState(0);
   const [locked, setLocked] = useState(false);
 
+  // The pending "settle the pair" timer. Cleared on restart (so it can't
+  // mark cards in the NEW deck) and on unmount (closing the modal mid-flip).
+  const pending = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (pending.current) clearTimeout(pending.current);
+    };
+  }, []);
+
   const won = deck.every((c) => c.matched);
 
   const reset = useCallback(() => {
+    if (pending.current) clearTimeout(pending.current);
     setDeck(shuffledDeck());
     setFlipped([]);
     setMoves(0);
@@ -48,17 +59,17 @@ export default function MemoryMatchGame() {
         setMoves((m) => m + 1);
         const [a, b] = next;
         if (deck[a].iconIndex === deck[b].iconIndex) {
-          setTimeout(() => {
-            setDeck((prev) => {
-              const updated = prev.map((c) => (c.id === a || c.id === b ? { ...c, matched: true } : c));
-              playSound(updated.every((c) => c.matched) ? "success" : "score");
-              return updated;
-            });
+          // The deck can't change while locked, so it's safe to build
+          // the updated deck from this render's copy.
+          const updated = deck.map((c) => (c.id === a || c.id === b ? { ...c, matched: true } : c));
+          pending.current = setTimeout(() => {
+            setDeck(updated);
             setFlipped([]);
             setLocked(false);
+            playSound(updated.every((c) => c.matched) ? "success" : "score");
           }, 400);
         } else {
-          setTimeout(() => {
+          pending.current = setTimeout(() => {
             setFlipped([]);
             setLocked(false);
             playSound("fail");
@@ -92,7 +103,7 @@ export default function MemoryMatchGame() {
                   card.matched ? "bg-accent/20 border border-accent/50" : isFlipped ? "bg-bg-raised border border-fg-faint/50" : "bg-[#232320] hover:bg-[#2b2b27]"
                 }`}
               >
-                {isFlipped ? <Icon className="w-6 h-6 text-fg" /> : <span className="label-mono text-fg-faint">?</span>}
+                {isFlipped ? <Icon className="w-6 h-6 text-fg" /> : <span className="label-mono text-fg-subtle">?</span>}
               </button>
             );
           })}

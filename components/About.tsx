@@ -3,19 +3,19 @@ import SectionLabel from "@/components/SectionLabel";
 import Reveal from "@/components/Reveal";
 import Sticker from "@/components/Sticker";
 import Tape from "@/components/Tape";
-import RandomFactBox from "@/components/RandomFactBox";
+import SplitHeading from "@/components/SplitHeading";
 
 export default function About({ showHeading = true }: { showHeading?: boolean }) {
   return (
-    <section id="about" className="relative py-20 md:py-28 bg-bg-raised" aria-label="About">
+    <section id="about" className="relative py-20 md:py-28 bg-bg-raised/80" aria-label="About">
       <div className="page-pad grid lg:grid-cols-[1.1fr_1fr] gap-14 lg:gap-20">
         <Reveal>
           {showHeading && (
             <>
-              <SectionLabel index="06" title="ABOUT" />
-              <h2 className="font-display text-4xl md:text-6xl mt-5 leading-[1.02] max-w-lg">
+              <SectionLabel index="05" title="ABOUT" />
+              <SplitHeading as="h2" className="font-display text-4xl md:text-6xl mt-5 leading-[1.02] max-w-lg">
                 Systems, stories, speed.
-              </h2>
+              </SplitHeading>
             </>
           )}
           <div className="flex flex-wrap gap-2 mt-6">
@@ -23,27 +23,23 @@ export default function About({ showHeading = true }: { showHeading?: boolean })
             <Sticker tone="outline" rotate={1}>STORIES</Sticker>
             <Sticker tone="red" rotate={-1}>SPEED</Sticker>
           </div>
-          <p className="mt-6 max-w-md text-fg-muted leading-relaxed">
-            A Computer Science student who ends up spending
-            most of his time in the gap between an idea and a system that
-            actually runs.
+          <p className="mt-6 max-w-lg text-lg md:text-xl text-fg leading-relaxed">
+            Hi, I&apos;m <span className="text-accent">Viswesh Kesarla</span> — a Computer
+            Science student who ends up spending most of my time in the gap
+            between an idea and a system that actually runs.
           </p>
-          <p className="mt-4 max-w-md text-fg-muted leading-relaxed">
+          <p className="mt-4 max-w-lg md:text-lg text-fg/80 leading-relaxed">
             I enjoy building with LLMs, RAG, backend technologies and emerging
             developer tools. Right now that means retrieval pipelines,
             evaluation, and getting language models to output things that
             compile.
           </p>
-          <p className="mt-4 max-w-md text-fg-muted leading-relaxed">
+          <p className="mt-4 max-w-lg md:text-lg text-fg/80 leading-relaxed">
             Outside of code, I&apos;m usually taking photographs or watching a
             race — the same instinct, really: paying attention to timing,
             framing, and what happens right at the edge.
           </p>
-          <p className="label-mono mt-6 text-fg-faint">CURRENTLY EXPLORING · OPEN TO INTERNSHIPS &amp; COLLABORATIONS</p>
-
-          <div className="mt-10">
-            <RandomFactBox />
-          </div>
+          <p className="label-mono mt-6 text-fg-muted">CURRENTLY EXPLORING · OPEN TO INTERNSHIPS &amp; COLLABORATIONS</p>
 
           <div className="mt-8 flex flex-wrap gap-2 max-w-md">
             {skillLabels.map((label, i) => (
@@ -75,7 +71,7 @@ export default function About({ showHeading = true }: { showHeading?: boolean })
                 <p className="label-mono !text-[9px]">GPA</p>
               </div>
             </div>
-            <p className="label-mono !text-[9px] mt-6 mb-2 text-fg-faint">RELEVANT COURSEWORK</p>
+            <p className="label-mono !text-[9px] mt-6 mb-2 text-fg-subtle">RELEVANT COURSEWORK</p>
             <ul className="space-y-1.5">
               {education.coursework.map((course) => (
                 <li key={course} className="text-sm text-fg-muted flex gap-2">

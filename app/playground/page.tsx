@@ -3,9 +3,10 @@ import SectionLabel from "@/components/SectionLabel";
 import GridBackground from "@/components/GridBackground";
 import Reveal from "@/components/Reveal";
 import Arcade from "@/components/games/Arcade";
+import SplitHeading from "@/components/SplitHeading";
 
 export const metadata: Metadata = {
-  title: "Playground — Viswesh Kesarla",
+  title: "Playground",
   description: "A small in-browser arcade by Viswesh Kesarla.",
 };
 
@@ -15,16 +16,16 @@ export default function PlaygroundPage() {
       <GridBackground strong className="opacity-60" />
       <div className="relative">
         <Reveal>
-          <SectionLabel index="05" title="PLAYGROUND" />
-          <h1 className="font-display text-[13vw] sm:text-7xl md:text-8xl mt-5 leading-[0.94]">
+          <SectionLabel index="04" title="PLAYGROUND" />
+          <SplitHeading as="h1" className="font-display text-[13vw] sm:text-7xl md:text-8xl mt-5 leading-[0.94]">
             Half-finished
             <br />
             ideas.
-          </h1>
+          </SplitHeading>
           <p className="mt-6 max-w-md text-fg-muted leading-relaxed">
-            This is the loose end of the site — small AI demos, creative-coding
-            sketches, and motorsport-inspired visual studies get dropped in
-            here as they happen, no polish required.
+            This is the loose end of the site — right now it&apos;s a small
+            arcade, and experiments get dropped in here as they happen, no
+            polish required.
           </p>
         </Reveal>
 

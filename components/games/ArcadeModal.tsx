@@ -1,34 +1,37 @@
 "use client";
 
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import GameLoader from "@/components/games/GameLoader";
+import ArcadeCabinet from "@/components/games/ArcadeCabinet";
+import { games } from "@/data/games";
 import { playSound } from "@/lib/sound";
+import { useModal } from "@/lib/useModal";
 
 export default function ArcadeModal({ gameId, onClose }: { gameId: string; onClose: () => void }) {
+  const dialogRef = useModal<HTMLDivElement>(onClose);
+  const title = games.find((g) => g.id === gameId)?.title ?? "Game";
+
   useEffect(() => {
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     playSound("whoosh");
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-    }
-    window.addEventListener("keydown", onKey);
-    return () => {
-      document.body.style.overflow = prevOverflow;
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [onClose]);
+  }, []);
 
   function closeWithSound() {
     playSound("click");
     onClose();
   }
 
-  return (
+  // Portaled to <body> so no transformed ancestor (the page-transition
+  // wrapper, a Reveal) can turn `position: fixed` into "fixed to it".
+  return createPortal(
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-[100] bg-bg/95 backdrop-blur-sm flex flex-col items-center justify-center px-4 py-20 overflow-y-auto"
+      aria-label={title}
+      tabIndex={-1}
+      data-lenis-prevent
+      className="fixed inset-0 z-[100] bg-bg/95 backdrop-blur-sm flex flex-col items-center px-4 py-12 overflow-y-auto outline-none"
       onClick={(e) => {
         if (e.target === e.currentTarget) closeWithSound();
       }}
@@ -42,7 +45,10 @@ export default function ArcadeModal({ gameId, onClose }: { gameId: string; onClo
       >
         CLOSE ✕
       </button>
-      <GameLoader id={gameId} />
-    </div>
+      <ArcadeCabinet title={title}>
+        <GameLoader id={gameId} />
+      </ArcadeCabinet>
+    </div>,
+    document.body
   );
 }

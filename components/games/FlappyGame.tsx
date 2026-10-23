@@ -34,10 +34,11 @@ export default function FlappyGame() {
     pipes: [] as Pipe[],
     spawnAcc: 0,
     score: 0,
+    dead: false,
   });
 
   const reset = useCallback(() => {
-    s.current = { birdY: H / 2, vy: 0, pipes: [], spawnAcc: 0, score: 0 };
+    s.current = { birdY: H / 2, vy: 0, pipes: [], spawnAcc: 0, score: 0, dead: false };
     setScore(0);
     setStatus("ready");
     setRunning(true);
@@ -47,13 +48,13 @@ export default function FlappyGame() {
     if (canvasRef.current) ctxRef.current = setupCanvas(canvasRef.current, W, H);
   }, []);
 
+  // Reads the game ref rather than doing work inside a setState updater —
+  // React may call updaters twice, which would double the flap sound.
   const flap = useCallback(() => {
-    setStatus((prev) => {
-      if (prev === "dead") return prev;
-      s.current.vy = FLAP_VELOCITY;
-      playSound("click");
-      return "playing";
-    });
+    if (s.current.dead) return;
+    s.current.vy = FLAP_VELOCITY;
+    playSound("click");
+    setStatus("playing");
   }, []);
 
   useEffect(() => {
@@ -67,7 +68,11 @@ export default function FlappyGame() {
     return () => window.removeEventListener("keydown", onKey);
   }, [flap]);
 
+  // Several collisions can register in the same frame (two pipes, or a
+  // pipe plus the floor) — only the first one counts.
   const die = useCallback(() => {
+    if (s.current.dead) return;
+    s.current.dead = true;
     setStatus("dead");
     setRunning(false);
     reportBest(s.current.score);
@@ -79,7 +84,7 @@ export default function FlappyGame() {
     const st = s.current;
     if (!ctx) return;
 
-    if (status === "playing") {
+    if (status === "playing" && !st.dead) {
       st.vy += GRAVITY * dt;
       st.birdY += st.vy * dt;
 
@@ -101,7 +106,10 @@ export default function FlappyGame() {
         }
         const withinX = BIRD_X + BIRD_R > p.x && BIRD_X - BIRD_R < p.x + PIPE_W;
         const hitsGap = st.birdY - BIRD_R < p.gapY - GAP / 2 || st.birdY + BIRD_R > p.gapY + GAP / 2;
-        if (withinX && hitsGap) die();
+        if (withinX && hitsGap) {
+          die();
+          break;
+        }
       }
 
       if (st.birdY + BIRD_R > H || st.birdY - BIRD_R < 0) die();
@@ -131,6 +139,12 @@ export default function FlappyGame() {
     >
       <canvas
         ref={canvasRef}
+        role="img"
+        aria-label={
+          status === "dead"
+            ? `Flappy Flyer: game over with ${score} points. Press Restart to play again.`
+            : "Flappy Flyer game. Press Space, tap or click to flap and fly between the pipes."
+        }
         style={{ width: "100%", height: "auto", aspectRatio: `${W}/${H}`, display: "block", touchAction: "none" }}
         onMouseDown={flap}
         onTouchStart={(e) => { e.preventDefault(); flap(); }}

@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 
 const LOADING = (
   <div className="w-full max-w-md mx-auto aspect-[4/5] flex items-center justify-center">
-    <p className="label-mono text-fg-faint">LOADING GAME…</p>
+    <p className="label-mono text-fg-subtle">LOADING GAME…</p>
   </div>
 );
 
