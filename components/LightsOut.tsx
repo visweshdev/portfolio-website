@@ -12,7 +12,7 @@ const LIGHTS = 5;
  * The loading screen: an F1-style race start, shown every time the site is
  * opened or reloaded (not on navigations within it): five pairs of
  * red lights come on one by one, hold for a random beat, then all go out
- * at once — and the site appears. Click or press any key to skip.
+ * at once — and the site appears. Click, tap or press any key to skip.
  *
  * Whether it shows is decided before first paint by the inline script
  * in app/layout.tsx (it adds `intro` to <html> unless the visitor
@@ -99,7 +99,10 @@ export default function LightsOut() {
           <span className="lights-out__go">LIGHTS OUT — AND AWAY WE GO</span>
         </p>
       </div>
-      <p className="label-mono absolute bottom-8 left-0 right-0 text-center text-fg-subtle">CLICK OR PRESS ANY KEY TO SKIP</p>
+      <p className="label-mono absolute bottom-8 left-0 right-0 text-center text-fg-subtle">
+        <span className="lights-out__hint--mouse">CLICK OR PRESS ANY KEY TO SKIP</span>
+        <span className="lights-out__hint--touch">TAP TO SKIP</span>
+      </p>
     </div>
   );
 }

@@ -1,12 +1,13 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ensureGsap, gsap, motionAllowed } from "@/lib/gsapConfig";
 import GridBackground from "@/components/GridBackground";
 import FloatingObject from "@/components/FloatingObject";
 import { useElapsedSinceStart } from "@/lib/useElapsedSinceStart";
-import { useRichMotion } from "@/lib/useRichMotion";
+import { useReducedMotion } from "@/lib/useReducedMotion";
+import { useFinePointer } from "@/lib/usePointerType";
 import { INTRO_DONE_EVENT } from "@/lib/intro";
 import { CAR_ON_TRACK_EVENT } from "@/lib/carEvents";
 import {
@@ -23,6 +24,7 @@ const TrackScene = dynamic(() => import("@/components/three/TrackScene"), {
 });
 
 const HEADLINE = ["BUILD.", "LEARN.", "CAPTURE."];
+const noop = () => () => {};
 
 /** The signature curve as a flat, still SVG — shown instead of the
  *  three.js scene on touch devices and under reduced motion, where the
@@ -79,7 +81,7 @@ function SessionClock() {
 }
 
 /** A hint for the parked F1 car; fades away once the car is on the line. */
-function CarHint() {
+function CarHint({ touch }: { touch: boolean }) {
   const [onTrack, setOnTrack] = useState(false);
   useEffect(() => {
     const done = () => setOnTrack(true);
@@ -91,16 +93,22 @@ function CarHint() {
       aria-hidden="true"
       className={`label-mono transition-opacity duration-700 ${onTrack ? "opacity-0" : "opacity-100"}`}
     >
-      <span className="text-accent">DRAG THE CAR ONTO THE LINE</span> · OR JUST SCROLL
+      <span className="text-accent">{touch ? "TAP THE CAR" : "DRAG THE CAR ONTO THE LINE"}</span> · OR JUST SCROLL
     </p>
   );
 }
 
 export default function Hero() {
   const linesRef = useRef<(HTMLSpanElement | null)[]>([]);
-  // The 3D track (and its 3D pillar objects) only download and run
-  // where their cursor-driven interaction actually works.
-  const show3d = useRichMotion();
+  // The 3D track runs everywhere except under reduced motion. Phones get
+  // a lighter version (see TrackScene's `lite`): it still drives along
+  // the line as you scroll, the car still races, taps still pulse.
+  const reduced = useReducedMotion();
+  const fine = useFinePointer();
+  // false on the server and during hydration, so the static curve is what
+  // ships in the HTML and the 3D chunk only loads in the browser
+  const hydrated = useSyncExternalStore(noop, () => true, () => false);
+  const show3d = hydrated && !reduced;
 
   useEffect(() => {
     const gsapInstance = ensureGsap();
@@ -133,7 +141,7 @@ export default function Hero() {
     <section className="relative min-h-[100svh] w-full overflow-hidden" aria-label="Introduction">
       <GridBackground />
       {show3d ? (
-        <TrackScene />
+        <TrackScene lite={!fine} />
       ) : (
         <>
           <StaticCurve />
@@ -190,7 +198,7 @@ export default function Hero() {
 
       {/* scroll cue */}
       <div className="page-pad absolute bottom-0 left-0 right-0 z-10 pb-8 md:pb-10 flex items-end justify-between gap-4">
-        {show3d ? <CarHint /> : <span />}
+        {show3d ? <CarHint touch={!fine} /> : <span />}
         <div className="flex items-center gap-3" aria-hidden="true">
           <span className="label-mono">SCROLL</span>
           <span className="relative h-8 w-px bg-fg-faint overflow-hidden">
