@@ -39,7 +39,7 @@ export const metadata: Metadata = {
 //    address by the nav, which would otherwise jump down the page.
 // If the animation code never loads, both classes are removed again so
 // nothing stays hidden or covered.
-const JS_FLAG = `(function(d){d.classList.add("js");try{history.scrollRestoration="manual";if(location.hash)history.replaceState(history.state,"",location.pathname+location.search);scrollTo(0,0)}catch(e){}try{if(!matchMedia("(prefers-reduced-motion: reduce)").matches)d.classList.add("intro")}catch(e){}setTimeout(function(){if(!window.__motionReady)d.classList.remove("js","intro")},4000)})(document.documentElement)`;
+const JS_FLAG = `(function(d){d.classList.add("js");try{history.scrollRestoration="manual";if(location.hash)history.replaceState(history.state,"",location.pathname+location.search);scrollTo(0,0)}catch(e){}try{if(!matchMedia("(prefers-reduced-motion: reduce)").matches)d.classList.add("intro")}catch(e){}setTimeout(function(){if(!window.__motionReady)d.classList.remove("js","intro")},8000)})(document.documentElement)`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (

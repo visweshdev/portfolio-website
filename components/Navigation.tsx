@@ -67,6 +67,12 @@ export default function Navigation() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 py-4 md:py-5" style={{ viewTransitionName: "site-header" }}>
+      {/* phones: fade the page out under the bar so the name and MENU
+          button never sit on top of photos or text */}
+      <div
+        aria-hidden="true"
+        className="md:hidden pointer-events-none absolute inset-0 -z-10 bg-bg/80 backdrop-blur-md border-b border-fg-faint/15"
+      />
       <nav
         className="page-pad flex items-center justify-between"
         aria-label="Primary"

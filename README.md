@@ -13,7 +13,8 @@ build time, and all content lives in typed files under `data/`.
 
 - **Collage visuals you can drag** — the PaperForge/URL-Shortener project
   scrapbooks are made of individually draggable pieces (pointer events,
-  no snap-back), not static images.
+  no snap-back), not static images. On touch screens they stay still so
+  swiping over them scrolls the page and taps reach the project link.
 - **A 3D racing line you drive along** — on the homepage, a glowing track
   sits behind the whole page and the camera drives down it as you scroll.
   Each section is a timing gantry the camera passes through as that section
@@ -60,11 +61,13 @@ build time, and all content lives in typed files under `data/`.
 - **Page transitions** — every navigation wipes the new page in over the
   old one (View Transitions API via React's `<ViewTransition>`).
 
-All of the heavy effects (the track, the photo wall, tilt, distortion,
-the pinned rail) only run for a mouse/trackpad visitor without
-`prefers-reduced-motion` (`lib/useRichMotion.ts`). Phones, tablets and
-reduced-motion visitors get still or simple versions, and never download
-three.js. Note that Windows' "Animation effects" setting being off makes
+The 3D racing line runs on phones and tablets too, in a lighter mode
+(lower pixel ratio; tap the parked car to send it out, or just scroll).
+The cursor-driven effects (the photo wall, tilt, distortion, the pinned
+rail, the hero's 3D objects, dragging the car) only run for a
+mouse/trackpad visitor without `prefers-reduced-motion`
+(`lib/useRichMotion.ts`); touch screens get simpler versions. Under
+reduced motion nothing 3D runs and three.js is never downloaded. Note that Windows' "Animation effects" setting being off makes
 browsers report reduced motion, which turns all of this off.
 - **A custom cursor** — a soft dot that grows over anything interactive
   (any element with a `data-cursor` attribute). Disabled on touch devices;
@@ -232,8 +235,8 @@ component to change content.
 - The Three.js hero scene, and every arcade game, are lazy-loaded
   (`next/dynamic`, `ssr: false`) as separate JS chunks — none of that code
   ships on pages that don't use it.
-- three.js is only loaded for a fine pointer without reduced motion, and the
-  photo wall uses small resized textures from Next's image optimizer.
+- three.js is never loaded under reduced motion; on touch screens the
+  track renders at a capped pixel ratio, and the photo wall uses small resized textures from Next's image optimizer.
 - The glow on the 3D track is layered additive tubes rather than a
   post-processing pass, so there's no extra render target per frame.
 - The hero's 3D render loop pauses automatically (via `IntersectionObserver`)

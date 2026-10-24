@@ -15,6 +15,7 @@ const MIN_EXTRA_LEAD = -0.012; // how much closer it drops back when scrolling u
 const SCALE = 0.7;
 const RIDE_HEIGHT = 0.24 * SCALE; // wheel radius, so the tyres sit on the line
 const PIT_OFFSET = -1.45; // beside the line at the start: negative = left of it, in the open space below the headline
+const PIT_OFFSET_NARROW = -0.75; // the same on portrait phone screens
 const SNAP_DISTANCE = 1.4; // a drop this close to the line counts as "on the line"
 const HIT_RADIUS = 1.0; // forgiving grab area around the car
 const MERGE_SECONDS = 0.9;
@@ -27,7 +28,7 @@ type Mode = "parked" | "dragging" | "merging" | "racing";
  *    racing line and it snaps on, lining up with the track at that spot.
  *    Drop it elsewhere and it stays parked there.
  *  - If nobody places it, scrolling makes it pull out and merge onto the
- *    line by itself.
+ *    line by itself. On touch screens a tap on it does the same.
  *  - On the line it follows the scroll: parked when you stop, pulling
  *    away when you scroll fast, drifting tail-out through bends, and
  *    lurching forward like a throttle blip when clicked.
@@ -88,6 +89,9 @@ export default function RacingCar({ track, camU }: { track: TrackPath; camU: Rea
     const tp = new THREE.Vector3();
     let downAt: { x: number; y: number } | null = null;
     let hovering = false;
+    // On touch screens dragging would fight the page scroll, so a tap on
+    // the parked car just sends it out onto the line instead.
+    const touch = window.matchMedia("(pointer: coarse)").matches;
 
     const setRay = (e: MouseEvent) => {
       ndc.set((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
@@ -112,6 +116,10 @@ export default function RacingCar({ track, camU }: { track: TrackPath; camU: Rea
       downAt = { x: e.clientX, y: e.clientY };
       const s = st.current;
       if (s.mode !== "parked" || !isOverCar(e)) return;
+      if (touch) {
+        beginMerge();
+        return;
+      }
       e.preventDefault(); // no text selection while dragging
       const g = car.current!;
       plane.constant = -g.position.y; // drag across the ground at the car's height
@@ -130,7 +138,7 @@ export default function RacingCar({ track, camU }: { track: TrackPath; camU: Rea
         }
         return;
       }
-      setCursor((s.mode === "parked" || s.mode === "racing") && isOverCar(e));
+      if (!touch) setCursor((s.mode === "parked" || s.mode === "racing") && isOverCar(e));
     }
     function onUp() {
       const s = st.current;
@@ -193,12 +201,14 @@ export default function RacingCar({ track, camU }: { track: TrackPath; camU: Rea
 
     // first frame: park beside the line, angled toward it
     if (!s.placed) {
+      // portrait phones see much less to the side, so park it nearer the line
+      const pit = (camera as THREE.PerspectiveCamera).aspect < 1 ? PIT_OFFSET_NARROW : PIT_OFFSET;
       const u0 = camNow + 0.025;
       sampleAt(track.pos, u0, v.p);
       sampleAt(track.side, u0, v.side);
       sampleAt(track.pos, Math.min(u0 + 0.01, 1), v.ahead);
-      g.position.set(v.p.x + v.side.x * PIT_OFFSET, v.p.y + RIDE_HEIGHT, v.p.z + v.side.z * PIT_OFFSET);
-      g.lookAt(v.ahead.x + v.side.x * PIT_OFFSET * 0.55, v.p.y + RIDE_HEIGHT, v.ahead.z + v.side.z * PIT_OFFSET * 0.55);
+      g.position.set(v.p.x + v.side.x * pit, v.p.y + RIDE_HEIGHT, v.p.z + v.side.z * pit);
+      g.lookAt(v.ahead.x + v.side.x * pit * 0.55, v.p.y + RIDE_HEIGHT, v.ahead.z + v.side.z * pit * 0.55);
       s.placed = true;
       s.startCamU = camNow;
     }

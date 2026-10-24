@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { useReducedMotion } from "@/lib/useReducedMotion";
+import { useRichMotion } from "@/lib/useRichMotion";
 import { playSound } from "@/lib/sound";
 
 type Props = {
@@ -16,7 +16,9 @@ type Props = {
  * object on a desk, not a hover trick. Pointer Events cover mouse,
  * touch and pen in one code path. There's no snap-back: whatever you
  * drop stays put, because scrapbooks don't reorganize themselves.
- * Falls back to static (non-draggable) under prefers-reduced-motion.
+ * Static (non-draggable) on touch screens — where grabbing a piece would
+ * hijack the page scroll and block taps on the project link — and under
+ * prefers-reduced-motion.
  */
 export default function DraggablePiece({ children, className = "", rotate = 0, style }: Props) {
   const ref = useRef<HTMLDivElement>(null);
@@ -28,7 +30,8 @@ export default function DraggablePiece({ children, className = "", rotate = 0, s
     px: 0,
     py: 0,
   });
-  const reducedMotion = useReducedMotion();
+  // static unless there is a mouse and motion is allowed
+  const reducedMotion = !useRichMotion();
 
   function apply(lift: boolean) {
     const el = ref.current;
@@ -49,7 +52,7 @@ export default function DraggablePiece({ children, className = "", rotate = 0, s
   }
 
   function onClick(e: React.MouseEvent<HTMLDivElement>) {
-    // Under reduced motion, dragging is disabled entirely — let the
+    // When dragging is off (touch / reduced motion) — let the
     // click pass through to whatever the piece sits inside (e.g. a
     // project link), so functionality never depends on this motion.
     if (reducedMotion) return;

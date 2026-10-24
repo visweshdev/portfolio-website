@@ -354,9 +354,10 @@ function Scene({ gates }: { gates: number[] }) {
  * (portaled to <body> so no transformed ancestor can trap it), with
  * pointer-events off so it never blocks the page.
  *
- * Only mounted for fine-pointer, full-motion visitors (see Hero.tsx).
+ * Not mounted under reduced motion (see Hero.tsx). `lite` (touch
+ * screens) renders at a lower pixel ratio to stay smooth on phones.
  */
-export default function TrackScene() {
+export default function TrackScene({ lite = false }: { lite?: boolean }) {
   const [gates, setGates] = useState<number[]>([]);
 
   // Each homepage section after the hero gets a gantry at the point on
@@ -386,7 +387,7 @@ export default function TrackScene() {
 
   return createPortal(
     <div className="fixed inset-0 -z-10 pointer-events-none" aria-hidden="true">
-      <Canvas camera={{ position: [0, CAM_HEIGHT, 0], fov: CAM_FOV, near: 0.1, far: 120 }} dpr={[1, 1.5]} gl={{ antialias: true, alpha: true }}>
+      <Canvas camera={{ position: [0, CAM_HEIGHT, 0], fov: CAM_FOV, near: 0.1, far: 120 }} dpr={lite ? [1, 1.25] : [1, 1.5]} gl={{ antialias: true, alpha: true, powerPreference: lite ? "low-power" : "high-performance" }}>
         <Scene gates={gates} />
       </Canvas>
     </div>,

@@ -316,6 +316,17 @@ html.intro body {
 .lights-out[data-out] .lights-out__go {
   display: inline;
 }
+.lights-out__hint--touch {
+  display: none;
+}
+@media (pointer: coarse) {
+  .lights-out__hint--mouse {
+    display: none;
+  }
+  .lights-out__hint--touch {
+    display: inline;
+  }
+}
 
 /* ---------------------------------- */
 /* 3D card tilt highlight             */
