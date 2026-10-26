@@ -20,6 +20,9 @@ export type Project = {
   // "in-development" shows an IN DEVELOPMENT badge and leaves the project
   // out of the "projects shipped" count. Omit for finished projects.
   status?: "in-development";
+  // false keeps a project off the homepage's Selected Projects; it still
+  // shows on /projects (VIEW ALL PROJECTS). Omit to feature it.
+  featured?: false;
   // Public source / live deployment. Either can be left out — only the
   // links that exist are rendered.
   links?: {
@@ -61,8 +64,43 @@ export const projects: Project[] = [
     handLabel: "fail → learn → recover",
   },
   {
-    slug: "paperforge",
+    slug: "remem",
     index: "02",
+    title: "ReMem",
+    year: "2026",
+    tagline: "ADD → SEARCH → ACT → FEEDBACK → LEARN",
+    stack: ["Python", "MCP", "LangChain", "sentence-transformers", "FAISS", "Chroma"],
+    summary:
+      "Memory for AI agents that learns from outcomes which memories actually help — it retires outdated facts, demotes useless look-alikes, and fits a token budget.",
+    stages: [
+      { label: "ADD FACTS" },
+      { label: "SEARCH", note: "similarity × learned usefulness" },
+      { label: "AGENT ACTS" },
+      { label: "FEEDBACK", note: "did it work · which memories helped" },
+      { label: "MEMORY LEDGER", note: "rank · retire · demote" },
+    ],
+    idea: "Most agent memories return whatever sounds most similar to the question. That breaks in two everyday ways: a look-alike note that never helps keeps winning, and a fact replaced last week is served right next to its replacement. ReMem ranks memories by what actually helped, not just by what sounds close.",
+    system: [
+      "Three calls: add facts, search before answering, and report feedback after — whether the task worked and which memories were used.",
+      "Ranking combines similarity with usefulness learned from outcomes; context is picked by an expected-utility knapsack under a token budget instead of a fixed top-k.",
+      "Every memory moves through an explicit lifecycle — active, low-value, compressed, archived, invalidated — with each transition logged. Nothing is deleted, replaced facts stay queryable \"as of\" a past date, and every decision can be inspected.",
+      "Ships as a Python API, an MCP server (so Claude and other MCP clients can use it as long-term memory) and a LangChain retriever, with pluggable embedders and FAISS/Chroma backends. Runs fully locally.",
+    ],
+    process: [
+      "Benchmarked against plain similarity search on 7 synthetic task families across 15 held-out seeds never used for tuning.",
+      "Also tested with real embeddings, a timestamp-aware reader, a small local LLM as the agent, and the public LongMemEval benchmark.",
+      "Results are reported honestly, including the settings where it doesn't help.",
+    ],
+    result:
+      "+10 to +14 points of task success over similarity search in the controlled benchmark (also with real embeddings), with the biggest gains where facts change. With a small real LLM the gain is within noise, and on LongMemEval, where no question repeats, it behaves like plain search — a research prototype, documented as one.",
+    handLabel: "remembers what helps",
+    links: {
+      repo: "https://github.com/visweshdev/ReMem",
+    },
+  },
+  {
+    slug: "paperforge",
+    index: "03",
     title: "PaperForge AI",
     year: "2026",
     tagline: "RESEARCH → RETRIEVAL → CODE",
@@ -94,7 +132,7 @@ export const projects: Project[] = [
   },
   {
     slug: "url-shortener",
-    index: "03",
+    index: "04",
     title: "URL Shortener",
     year: "2026",
     tagline: "URL → HASH → DATABASE → REDIRECT",
@@ -119,6 +157,7 @@ export const projects: Project[] = [
     result:
       "A compact, well-structured full-stack artifact: URL in, short hash out, reliable redirect back — with the CI/CD discipline of a much larger system.",
     handLabel: "shrink & redirect",
+    featured: false,
     links: {
       repo: "https://github.com/visweshdev/url-shortener",
     },

@@ -22,7 +22,7 @@ export default function SelectedWorks() {
 
         <div className="mt-4">
           <HorizontalRail>
-            {projects.map((project, i) => (
+            {projects.filter((p) => p.featured !== false).map((project, i) => (
               <ProjectRow key={project.slug} project={project} reversed={i % 2 === 1} />
             ))}
           </HorizontalRail>
