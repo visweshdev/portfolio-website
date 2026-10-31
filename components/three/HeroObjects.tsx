@@ -176,8 +176,18 @@ function CameraModel() {
   );
 }
 
+/** Handles to the car's wheels, so the driver code can spin and steer them. */
+export type WheelRig = {
+  /** one per wheel, spun about its own axle (rotation.z) */
+  spin: (THREE.Group | null)[];
+  /** the two front wheels, turned for steering (rotation.y) */
+  steer: (THREE.Group | null)[];
+};
+
+export const WHEEL_RADIUS = 0.22; // in model units
+
 /** Wireframe F1 car, nose along +x. Drives the track in RacingCar.tsx. */
-export function F1Model() {
+export function F1Model({ wheels: rig }: { wheels?: WheelRig } = {}) {
   const geo = useMemo(
     () => ({
       chassis: new THREE.BoxGeometry(2.1, 0.16, 0.44),
@@ -187,7 +197,9 @@ export function F1Model() {
       post: new THREE.BoxGeometry(0.05, 0.36, 0.05),
       airbox: new THREE.BoxGeometry(0.6, 0.26, 0.3),
       halo: new THREE.TorusGeometry(0.17, 0.018, 6, 14, Math.PI),
-      wheel: new THREE.CylinderGeometry(0.22, 0.22, 0.2, 16),
+      wheel: new THREE.CylinderGeometry(WHEEL_RADIUS, WHEEL_RADIUS, 0.2, 16),
+      // a bright mark across each wheel face, so you can see it turn
+      spoke: new THREE.BoxGeometry(0.34, 0.03, 0.205),
     }),
     []
   );
@@ -208,7 +220,23 @@ export function F1Model() {
       <Outline geometry={geo.post} position={[-1.05, 0.22, 0.25]} />
       <Outline geometry={geo.post} position={[-1.05, 0.22, -0.25]} />
       {wheels.map((p, i) => (
-        <Outline key={i} geometry={geo.wheel} position={p} rotation={[Math.PI / 2, 0, 0]} />
+        // outer group steers (front wheels only), inner group rolls
+        <group
+          key={i}
+          position={p}
+          ref={(el) => {
+            if (rig && i < 2) rig.steer[i] = el;
+          }}
+        >
+          <group
+            ref={(el) => {
+              if (rig) rig.spin[i] = el;
+            }}
+          >
+            <Outline geometry={geo.wheel} rotation={[Math.PI / 2, 0, 0]} />
+            <Outline geometry={geo.spoke} color={ACCENT} opacity={0.75} />
+          </group>
+        </group>
       ))}
     </group>
   );

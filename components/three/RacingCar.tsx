@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import { F1Model } from "@/components/three/HeroObjects";
+import { F1Model, WHEEL_RADIUS, type WheelRig } from "@/components/three/HeroObjects";
 import { ManModel, emptyRig } from "@/components/three/Driver";
 import { sampleAt, CAM_END, type TrackPath } from "@/components/three/trackPath";
 import { FINISH_U } from "@/components/three/FinishLine";
@@ -137,6 +137,7 @@ export default function RacingCar({
   const seatedDriver = useRef<THREE.Group>(null);
   const bubble = useRef<HTMLDivElement | null>(null);
   const seatedRig = useMemo(() => emptyRig(), []);
+  const wheels = useMemo<WheelRig>(() => ({ spin: [], steer: [] }), []);
   const light = useRef<THREE.MeshBasicMaterial>(null);
   const rig = useMemo(() => emptyRig(), []);
   const { camera } = useThree();
@@ -188,6 +189,9 @@ export default function RacingCar({
     spin: -1, // 0 → 1 while he spins (double-click), -1 when not
     donut: -1, // 0 → 1 while the car spins (five quick clicks), -1 when not
     carClicks: [] as number[],
+    wheelSpin: 0, // accumulated roll angle
+    steer: 0,
+    lastPos: null as THREE.Vector3 | null,
     phase: 0, // walk cycle
   });
 
@@ -443,6 +447,20 @@ export default function RacingCar({
       if (s.finT >= 1) climbOut(s, m, g);
     }
 
+    // ---- tyres: roll by the distance actually travelled, steer into bends ----
+    if (!s.lastPos) s.lastPos = g.position.clone();
+    g.getWorldDirection(v.further); // car's forward (+z)
+    v.tmp.subVectors(g.position, s.lastPos);
+    const travelled = v.tmp.dot(v.further); // signed: backwards rolls backwards
+    s.lastPos.copy(g.position);
+    // a big jump (first frame, a teleport) shouldn't spin the wheels wildly
+    if (Math.abs(travelled) < 1) s.wheelSpin -= travelled / (WHEEL_RADIUS * SCALE);
+    const moving = s.mode === "racing" || s.mode === "merging" || s.mode === "finishing";
+    const targetSteer = moving ? THREE.MathUtils.clamp(bend * 4 - s.drift * 0.6, -0.45, 0.45) : 0;
+    s.steer += (targetSteer - s.steer) * 0.15;
+    for (const w of wheels.spin) if (w) w.rotation.z = s.wheelSpin;
+    for (const w of wheels.steer) if (w) w.rotation.y = s.steer;
+
     if (light.current) {
       const moving = s.mode === "racing" ? Math.abs(s.speed) * 4 : 0;
       const waiting = s.mode === "parked" || s.mode === "walking" || s.mode === "finished" ? 0 : 0.1;
@@ -618,7 +636,7 @@ export default function RacingCar({
       <group ref={car}>
         {/* lookAt points +z down the track; the model's nose is +x */}
         <group rotation={[0, -Math.PI / 2, 0]} scale={SCALE}>
-          <F1Model />
+          <F1Model wheels={wheels} />
           {/* rear rain light, the way a real F1 car glows from behind */}
           <mesh position={[-1.18, 0.12, 0]}>
             <sphereGeometry args={[0.07, 10, 10]} />

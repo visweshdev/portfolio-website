@@ -33,7 +33,7 @@ build time, and all content lives in typed files under `data/`.
   control on the page. Easter eggs: double-click him for a spin, click the
   moving car five times quickly for a donut. With sound on, the car makes
   a short engine note as it pulls away. Keyboard users get a "Send the
-  driver to the car" button (visible on focus). Once he's in, the car drives just ahead of the camera as you scroll — parked when
+  driver to the car" button (visible on focus). Once he's in, the car (tyres rolling with its speed, front wheels steering into bends) drives just ahead of the camera as you scroll — parked when
   you stop, pulling away when you
   scroll fast, drifting tail-out through bends, lurching forward when
   clicked — up to a chequered finish line painted across the track where
