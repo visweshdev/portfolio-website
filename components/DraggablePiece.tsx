@@ -62,9 +62,12 @@ export default function DraggablePiece({ children, className = "", rotate = 0, s
 
   function onPointerMove(e: React.PointerEvent<HTMLDivElement>) {
     if (!drag.current.active) return;
+    // a collage shrunk to fit a small screen (CollageFrame) moves pieces
+    // in its own, larger units — divide so the piece stays under the cursor
+    const scale = Number(ref.current?.closest<HTMLElement>("[data-collage-scale]")?.dataset.collageScale) || 1;
     pos.current = {
-      x: drag.current.px + (e.clientX - drag.current.sx),
-      y: drag.current.py + (e.clientY - drag.current.sy),
+      x: drag.current.px + (e.clientX - drag.current.sx) / scale,
+      y: drag.current.py + (e.clientY - drag.current.sy) / scale,
     };
     apply(true);
   }

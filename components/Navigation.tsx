@@ -71,7 +71,7 @@ export default function Navigation() {
           button never sit on top of photos or text */}
       <div
         aria-hidden="true"
-        className="md:hidden pointer-events-none absolute inset-0 -z-10 bg-bg/80 backdrop-blur-md border-b border-fg-faint/15"
+        className="lg:hidden pointer-events-none absolute inset-0 -z-10 bg-bg/80 backdrop-blur-md border-b border-fg-faint/15"
       />
       <nav
         className="page-pad flex items-center justify-between"
@@ -87,7 +87,7 @@ export default function Navigation() {
         </Link>
 
         {/* Desktop links */}
-        <ul className="hidden md:flex items-center gap-7">
+        <ul className="hidden lg:flex items-center gap-7">
           {navLinks.map((link) => (
             <li key={link.section}>
               <Link
@@ -102,7 +102,7 @@ export default function Navigation() {
           ))}
         </ul>
 
-        <div className="hidden md:flex items-center gap-5">
+        <div className="hidden lg:flex items-center gap-5">
           <SoundToggle />
           <a
             href={contact.resumeHref}
@@ -131,14 +131,14 @@ export default function Navigation() {
           onClick={toggleMenu}
           aria-expanded={open}
           aria-controls="mobile-nav"
-          className="md:hidden label-mono !text-[11px] text-fg border border-fg-faint px-3 py-1.5 rounded-full"
+          className="lg:hidden label-mono !text-[11px] text-fg border border-fg-faint px-3 py-1.5 rounded-full"
         >
           {open ? "CLOSE" : "MENU"}
         </button>
       </nav>
 
       {open && (
-        <div className="page-pad md:hidden">
+        <div className="page-pad lg:hidden">
           <div
             id="mobile-nav"
             className="mt-3 flex flex-col gap-1 bg-bg-raised/95 backdrop-blur border border-fg-faint/30 rounded-2xl p-5"
