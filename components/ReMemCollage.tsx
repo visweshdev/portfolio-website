@@ -105,7 +105,7 @@ export default function ReMemCollage({
       </DraggablePiece>
       <DraggablePiece
         rotate={4}
-        className="absolute left-[8%] top-[48%] drop-shadow-lg"
+        className="absolute left-[6%] top-[41%] drop-shadow-lg"
       >
         <Sticker tone="outline" rotate={0}>
           ACTIVE → LOW_VALUE

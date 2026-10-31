@@ -8,6 +8,7 @@ import SoundLink from "@/components/SoundLink";
 import FlowStrip from "@/components/FlowStrip";
 import ProjectLinks from "@/components/ProjectLinks";
 import { COLLAGES } from "@/components/collages";
+import CollageFrame from "@/components/CollageFrame";
 import SplitHeading from "@/components/SplitHeading";
 
 export function generateStaticParams() {
@@ -70,7 +71,9 @@ export default async function ProjectPage({
 
         {Collage && (
           <Reveal delay={0.1} className="mt-16 md:mt-20 max-w-3xl">
-            <Collage />
+            <CollageFrame>
+              <Collage />
+            </CollageFrame>
           </Reveal>
         )}
 

@@ -317,6 +317,22 @@ const ANCHORS = {
  * floating icons when the 3D scene is running, and slide past as the
  * camera sets off down the track.
  */
+/**
+ * The camera model sits just under the headline's left edge. The headline
+ * grows with the window's width, so on very wide screens a fixed spot
+ * would land on the text: measure where it actually ends instead.
+ */
+function cameraAnchor(w: number, h: number) {
+  const r = document.querySelector("h1")?.getBoundingClientRect();
+  if (!r || w <= 0 || h <= 0) return ANCHORS.camera;
+  const bottom = r.bottom + window.scrollY; // the hero is at the top of the page
+  return {
+    x: Math.min(((r.left + 140) / w) * 2 - 1, ANCHORS.camera.x),
+    y: Math.max(Math.min(1 - (2 * bottom) / h - 0.24, ANCHORS.camera.y), -0.8),
+    dist: ANCHORS.camera.dist,
+  };
+}
+
 export default function HeroObjects({ track, pointer }: { track: TrackPath; pointer: PointerRef }) {
   const { size } = useThree();
 
@@ -331,7 +347,7 @@ export default function HeroObjects({ track, pointer }: { track: TrackPath; poin
     return {
       code: place(ANCHORS.code),
       node: place(ANCHORS.node),
-      camera: place(ANCHORS.camera),
+      camera: place(cameraAnchor(size.width, size.height)),
       database: place(ANCHORS.database),
       chip: place(ANCHORS.chip),
     };
