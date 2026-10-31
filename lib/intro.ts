@@ -4,3 +4,10 @@
 
 /** Fired on window once the intro overlay has fully cleared. */
 export const INTRO_DONE_EVENT = "intro:done";
+
+/**
+ * Fired on window when the homepage's 3D track has drawn its first frame
+ * (window.__sceneReady is set too). The intro holds the lights on until
+ * then, so the hero never shows its plain fallback after the lights go out.
+ */
+export const SCENE_READY_EVENT = "scene:ready";

@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { ensureGsap, gsap } from "@/lib/gsapConfig";
 import { lenisInstance } from "@/lib/lenisInstance";
 import { playSound } from "@/lib/sound";
-import { INTRO_DONE_EVENT } from "@/lib/intro";
+import { INTRO_DONE_EVENT, SCENE_READY_EVENT } from "@/lib/intro";
 
 const LIGHTS = 5;
 
@@ -58,6 +58,21 @@ export default function LightsOut() {
         light.dataset.on = "true";
         playSound("click");
       }).to({}, { duration: 0.38 });
+    });
+    // On the homepage, keep the lights on until the 3D track has drawn its
+    // first frame, so lights-out reveals the finished hero. Capped, so a
+    // slow device or a WebGL failure never leaves anyone stuck here.
+    tl.add(() => {
+      const w = window as unknown as { __sceneExpected?: boolean; __sceneReady?: boolean };
+      if (!w.__sceneExpected || w.__sceneReady) return;
+      tl.pause();
+      const go = () => {
+        window.clearTimeout(cap);
+        window.removeEventListener(SCENE_READY_EVENT, go);
+        if (!finished) tl.resume();
+      };
+      const cap = window.setTimeout(go, 6000);
+      window.addEventListener(SCENE_READY_EVENT, go, { once: true });
     });
     tl.to({}, { duration: hold });
     tl.add(() => {

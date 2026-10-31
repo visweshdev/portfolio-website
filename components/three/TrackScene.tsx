@@ -1,5 +1,6 @@
 "use client";
 
+import { SCENE_READY_EVENT } from "@/lib/intro";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
@@ -303,6 +304,18 @@ function CameraRig({ track, camU, pointer }: { track: TrackPath; camU: React.Ref
   return null;
 }
 
+/** Tells the loading screen the track is on screen (after its first frame). */
+function ReadySignal() {
+  const sent = useRef(false);
+  useFrame(() => {
+    if (sent.current) return;
+    sent.current = true;
+    (window as unknown as { __sceneReady?: boolean }).__sceneReady = true;
+    window.dispatchEvent(new Event(SCENE_READY_EVENT));
+  });
+  return null;
+}
+
 function Scene({ gates, gateIds, lite }: { gates: number[]; gateIds: string[]; lite: boolean }) {
   const track = useMemo(() => buildTrack(), []);
   const camU = useRef(0);
@@ -338,6 +351,7 @@ function Scene({ gates, gateIds, lite }: { gates: number[]; gateIds: string[]; l
       {/* only the driver uses lit materials; everything else is unlit lines */}
       <hemisphereLight args={["#fff8ee", "#2a2622", 1.6]} />
       <directionalLight position={[4, 8, 6]} intensity={1.8} />
+      <ReadySignal />
       <CameraRig track={track} camU={camU} pointer={pointer} />
       <TrackLine track={track} glowRef={glowRef} />
       <Particles track={track} count={lite ? 320 : PARTICLES} />
