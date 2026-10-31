@@ -7,6 +7,7 @@ import { COLLAGES } from "@/components/collages";
 import Tilt from "@/components/Tilt";
 import HoverDistort from "@/components/HoverDistort";
 import FlowStrip from "@/components/FlowStrip";
+import CollageFrame from "@/components/CollageFrame";
 
 export default function ProjectRow({ project, reversed = false }: { project: Project; reversed?: boolean }) {
   const Collage = COLLAGES[project.slug];
@@ -17,8 +18,8 @@ export default function ProjectRow({ project, reversed = false }: { project: Pro
   // lead to the detail page; `group` keeps the hover state shared.
   return (
     <Reveal className="border-t border-fg-faint/25 py-14 md:py-20">
-      <div className="group grid md:grid-cols-2 gap-10 md:gap-16 items-center">
-        <div className={`project-collage ${reversed ? "md:order-2" : ""}`}>
+      <div className="group grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+        <div className={`project-collage w-full max-w-2xl lg:max-w-none ${reversed ? "lg:order-2" : ""}`}>
           <Tilt className="rounded-2xl">
             <SoundLink
               href={href}
@@ -30,7 +31,9 @@ export default function ProjectRow({ project, reversed = false }: { project: Pro
             >
               <HoverDistort>
                 {Collage ? (
-                  <Collage />
+                  <CollageFrame>
+                    <Collage />
+                  </CollageFrame>
                 ) : (
                   // no scrapbook visual yet — show the project's pipeline instead
                   <div className="aspect-[6/5] w-full flex flex-col justify-center gap-6">
@@ -43,7 +46,7 @@ export default function ProjectRow({ project, reversed = false }: { project: Pro
           </Tilt>
         </div>
 
-        <div className={reversed ? "md:order-1" : ""}>
+        <div className={reversed ? "lg:order-1" : ""}>
           <div className="flex items-baseline gap-3 label-mono mb-4">
             <span className="text-accent">{project.index}</span>
             <span>{project.year}</span>
@@ -53,7 +56,7 @@ export default function ProjectRow({ project, reversed = false }: { project: Pro
               </span>
             )}
           </div>
-          <h3 className="font-display text-[10vw] sm:text-6xl md:text-5xl lg:text-6xl leading-[0.95] tracking-tight text-fg group-hover:text-accent transition-colors">
+          <h3 className="font-display text-[10vw] sm:text-6xl lg:text-5xl xl:text-6xl leading-[0.95] tracking-tight text-fg group-hover:text-accent transition-colors">
             <SoundLink href={href} sound="pop" data-cursor="open">
               {project.title}
             </SoundLink>

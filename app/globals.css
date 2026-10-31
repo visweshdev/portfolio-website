@@ -288,7 +288,7 @@ html.intro body {
 }
 .lights-out__bulb {
   display: block;
-  width: clamp(26px, 6vw, 52px);
+  width: clamp(22px, min(6vw, 8svh), 52px);
   aspect-ratio: 1;
   border-radius: 999px;
   background: #1f0b09;
