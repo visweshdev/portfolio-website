@@ -13,7 +13,7 @@
  * real user gesture — a click, a game action).
  */
 
-type SoundName = "click" | "pop" | "success" | "fail" | "score" | "whoosh";
+type SoundName = "click" | "pop" | "success" | "fail" | "score" | "whoosh" | "engine";
 
 const STORAGE_KEY = "portfolio-sound-enabled";
 let ctx: AudioContext | null = null;
@@ -82,6 +82,7 @@ function tone(
 }
 
 const RECIPES: Record<SoundName, (audioCtx: AudioContext) => void> = {
+  engine: (c) => engine(c),
   click: (c) => tone(c, { freq: 720, start: c.currentTime, duration: 0.06, type: "square", gain: 0.05 }),
   pop: (c) => tone(c, { freq: 440, start: c.currentTime, duration: 0.09, type: "triangle", gain: 0.07 }),
   score: (c) => {
@@ -110,6 +111,32 @@ const RECIPES: Record<SoundName, (audioCtx: AudioContext) => void> = {
     osc.stop(c.currentTime + 0.34);
   },
 };
+
+/** A short, soft engine pull-away: a low buzz that climbs in pitch, muffled. */
+function engine(c: AudioContext) {
+  const t = c.currentTime;
+  const filter = c.createBiquadFilter();
+  filter.type = "lowpass";
+  filter.frequency.setValueAtTime(420, t);
+  filter.frequency.linearRampToValueAtTime(900, t + 0.7);
+  const g = c.createGain();
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(0.045, t + 0.08);
+  g.gain.setValueAtTime(0.045, t + 0.45);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+  filter.connect(g).connect(c.destination);
+  // two detuned saws give it some grit without sounding like a rev
+  [0, 7].forEach((detune) => {
+    const osc = c.createOscillator();
+    osc.type = "sawtooth";
+    osc.detune.value = detune;
+    osc.frequency.setValueAtTime(70, t);
+    osc.frequency.exponentialRampToValueAtTime(150, t + 0.75);
+    osc.connect(filter);
+    osc.start(t);
+    osc.stop(t + 0.95);
+  });
+}
 
 export function playSound(name: SoundName) {
   if (!enabled) return;

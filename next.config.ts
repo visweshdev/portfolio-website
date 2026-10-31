@@ -6,6 +6,8 @@ const nextConfig: NextConfig = {
   },
   // Don't advertise the framework in response headers.
   poweredByHeader: false,
+  // Dev server only: also allow opening it at 127.0.0.1, not just localhost.
+  allowedDevOrigins: ["127.0.0.1"],
   images: {
     // Next 16 only serves qualities explicitly allowed here — without
     // this, a `quality={95}` prop is silently clamped back to the

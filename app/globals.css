@@ -653,16 +653,46 @@ html.hero-object-hover .cursor-dot {
   background: rgba(232, 163, 61, 0.45) !important;
 }
 
-/* Cursor over / dragging the parked F1 car (RacingCar.tsx). */
-html.car-hover .cursor-dot,
-html.car-dragging .cursor-dot {
+/* The driver's speech bubble (RacingCar.tsx), placed over his head each frame. */
+.driver-bubble {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 20;
+  pointer-events: none;
+  white-space: nowrap;
+  padding: 4px 12px 6px;
+  border-radius: 12px;
+  background: var(--color-fg);
+  color: #120f0b;
+  font-family: var(--font-hand), cursive;
+  font-size: 20px;
+  line-height: 1.1;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  margin-top: -10px;
+  transition: opacity 180ms ease;
+}
+.driver-bubble::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  width: 12px;
+  height: 12px;
+  background: var(--color-fg);
+  transform: translateX(-50%) rotate(45deg);
+  border-radius: 2px;
+}
+.driver-bubble.is-on {
+  opacity: 1;
+}
+
+/* Cursor over the waiting driver or the moving F1 car (RacingCar.tsx). */
+html.car-hover .cursor-dot {
   width: 40px !important;
   height: 40px !important;
   margin-left: -20px !important;
   margin-top: -20px !important;
   background: rgba(232, 163, 61, 0.45) !important;
-}
-html.car-dragging,
-html.car-dragging * {
-  user-select: none;
 }
