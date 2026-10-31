@@ -291,3 +291,16 @@ Set `NEXT_PUBLIC_SITE_URL` to the public domain (e.g.
 `https://visweshkesarla.com`) so Open Graph images, the sitemap and
 robots.txt use absolute URLs on it. On Vercel it falls back to the
 project's production domain automatically.
+
+## License
+
+The **code** is MIT-licensed: you can use, change and share it, but you must
+keep the copyright notice crediting **Viswesh Kesarla** in any copy or
+substantial portion. A link back to this repository is appreciated.
+
+The **personal content** is not licensed and remains all rights reserved:
+the photographs, the resume, the bio and project write-ups, contact details,
+and his name and likeness (including the 3D figure). If you build your own
+site from this code, swap in your own content.
+
+See [LICENSE](LICENSE) for the full terms.
