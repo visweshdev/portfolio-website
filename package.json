@@ -4,6 +4,7 @@
   "private": true,
   "description": "Personal portfolio of Viswesh Kesarla — AI/software projects, photography, and a small in-browser arcade.",
   "author": "Viswesh Kesarla",
+  "license": "SEE LICENSE IN LICENSE",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
