@@ -8,7 +8,7 @@ import { sampleAt, CAM_END, type TrackPath } from "@/components/three/trackPath"
 // camera stops at CAM_END and the car rides ~0.03 ahead (RacingCar.tsx).
 // The line goes just in front of that, so reaching the bottom of the
 // site means the car crossing it.
-const FINISH_U = CAM_END + 0.034;
+export const FINISH_U = CAM_END + 0.034;
 const WIDTH = 3.8; // across the track (edge lines sit at ±1.7)
 const DEPTH = 0.7; // along the track
 const ROWS = 2;

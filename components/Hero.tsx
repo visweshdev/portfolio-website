@@ -9,7 +9,7 @@ import { useElapsedSinceStart } from "@/lib/useElapsedSinceStart";
 import { useReducedMotion } from "@/lib/useReducedMotion";
 import { useFinePointer } from "@/lib/usePointerType";
 import { INTRO_DONE_EVENT } from "@/lib/intro";
-import { CAR_ON_TRACK_EVENT } from "@/lib/carEvents";
+import { CAR_ON_TRACK_EVENT, DRIVER_GO_EVENT } from "@/lib/carEvents";
 import {
   CameraIcon,
   F1SilhouetteIcon,
@@ -80,7 +80,7 @@ function SessionClock() {
   );
 }
 
-/** A hint for the parked F1 car; fades away once the car is on the line. */
+/** A hint for the driver waiting by the car; fades once he heads to it. */
 function CarHint({ touch }: { touch: boolean }) {
   const [onTrack, setOnTrack] = useState(false);
   useEffect(() => {
@@ -93,7 +93,7 @@ function CarHint({ touch }: { touch: boolean }) {
       aria-hidden="true"
       className={`label-mono transition-opacity duration-700 ${onTrack ? "opacity-0" : "opacity-100"}`}
     >
-      <span className="text-accent">{touch ? "TAP THE CAR" : "DRAG THE CAR ONTO THE LINE"}</span> · OR JUST SCROLL
+      <span className="text-accent">{touch ? "TAP THE DRIVER" : "CLICK THE DRIVER"}</span> · OR JUST SCROLL
     </p>
   );
 }
@@ -108,7 +108,32 @@ export default function Hero() {
   // false on the server and during hydration, so the static curve is what
   // ships in the HTML and the 3D chunk only loads in the browser
   const hydrated = useSyncExternalStore(noop, () => true, () => false);
-  const show3d = hydrated && !reduced;
+  // three.js is a big download to parse, so it waits until the loading
+  // screen has cleared and the browser is idle: the page itself comes up
+  // first, then the track fades in behind it.
+  const [sceneReady, setSceneReady] = useState(false);
+  useEffect(() => {
+    let idle = 0;
+    let timer = 0;
+    const start = () => {
+      if (typeof window.requestIdleCallback === "function") {
+        idle = window.requestIdleCallback(() => setSceneReady(true), { timeout: 1500 });
+      } else {
+        timer = window.setTimeout(() => setSceneReady(true), 300); // Safari
+      }
+    };
+    if (document.documentElement.classList.contains("intro")) {
+      window.addEventListener(INTRO_DONE_EVENT, start, { once: true });
+    } else {
+      start();
+    }
+    return () => {
+      window.removeEventListener(INTRO_DONE_EVENT, start);
+      if (idle) window.cancelIdleCallback(idle);
+      window.clearTimeout(timer);
+    };
+  }, []);
+  const show3d = hydrated && !reduced && sceneReady;
 
   useEffect(() => {
     const gsapInstance = ensureGsap();
@@ -199,6 +224,23 @@ export default function Hero() {
       {/* scroll cue */}
       <div className="page-pad absolute bottom-0 left-0 right-0 z-10 pb-8 md:pb-10 flex items-end justify-between gap-4">
         {show3d ? <CarHint touch={!fine} /> : <span />}
+        {show3d && (
+          <>
+            {/* the 3D scene is mouse/touch only — describe it, and give
+                keyboard users their own way to start the lap */}
+            <p className="sr-only">
+              Decorative 3D scene: a figure of Viswesh waits beside an F1 car on a racing line, then drives it
+              down the page as you scroll.
+            </p>
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new Event(DRIVER_GO_EVENT))}
+              className="sr-only focus:not-sr-only focus:absolute focus:left-6 focus:bottom-20 label-mono focus:rounded-full focus:border focus:border-accent focus:px-4 focus:py-2 focus:text-accent"
+            >
+              Send the driver to the car
+            </button>
+          </>
+        )}
         <div className="flex items-center gap-3" aria-hidden="true">
           <span className="label-mono">SCROLL</span>
           <span className="relative h-8 w-px bg-fg-faint overflow-hidden">

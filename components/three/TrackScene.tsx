@@ -83,15 +83,15 @@ function TrackLine({ track, glowRef }: { track: TrackPath; glowRef: React.RefObj
 }
 
 /** Points of light streaming down the track like data — or a speed trail. */
-function Particles({ track }: { track: TrackPath }) {
+function Particles({ track, count }: { track: TrackPath; count: number }) {
   const ref = useRef<THREE.Points>(null);
   const { geometry, seeds } = useMemo(() => {
-    const positions = new Float32Array(PARTICLES * 3);
-    const colors = new Float32Array(PARTICLES * 3);
+    const positions = new Float32Array(count * 3);
+    const colors = new Float32Array(count * 3);
     const amber = new THREE.Color(ACCENT);
     const white = new THREE.Color(FG);
     const random = seededRandom(7);
-    const seeds = Array.from({ length: PARTICLES }, (_, i) => {
+    const seeds = Array.from({ length: count }, (_, i) => {
       const c = i % 4 === 0 ? white : amber;
       colors.set([c.r, c.g, c.b], i * 3);
       return {
@@ -105,7 +105,7 @@ function Particles({ track }: { track: TrackPath }) {
     geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
     geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
     return { geometry, seeds };
-  }, []);
+  }, [count]);
 
   const p = useMemo(() => new THREE.Vector3(), []);
   const s = useMemo(() => new THREE.Vector3(), []);
@@ -127,7 +127,7 @@ function Particles({ track }: { track: TrackPath }) {
   useFrame((_, delta) => {
     const attr = geometry.getAttribute("position") as THREE.BufferAttribute;
     const arr = attr.array as Float32Array;
-    for (let i = 0; i < PARTICLES; i++) {
+    for (let i = 0; i < count; i++) {
       const seed = seeds[i];
       seed.u = (seed.u + seed.speed * delta) % 1;
       sampleAt(track.pos, seed.u, p);
@@ -303,7 +303,7 @@ function CameraRig({ track, camU, pointer }: { track: TrackPath; camU: React.Ref
   return null;
 }
 
-function Scene({ gates }: { gates: number[] }) {
+function Scene({ gates, gateIds, lite }: { gates: number[]; gateIds: string[]; lite: boolean }) {
   const track = useMemo(() => buildTrack(), []);
   const camU = useRef(0);
   const pointer = useRef({ x: 0, y: 0 });
@@ -335,13 +335,16 @@ function Scene({ gates }: { gates: number[] }) {
     <>
       {/* distance fade into the page colour, so the track dissolves rather than ends */}
       <fog attach="fog" args={[BG, 8, 70]} />
+      {/* only the driver uses lit materials; everything else is unlit lines */}
+      <hemisphereLight args={["#fff8ee", "#2a2622", 1.6]} />
+      <directionalLight position={[4, 8, 6]} intensity={1.8} />
       <CameraRig track={track} camU={camU} pointer={pointer} />
       <TrackLine track={track} glowRef={glowRef} />
-      <Particles track={track} />
+      <Particles track={track} count={lite ? 320 : PARTICLES} />
       <Gates track={track} gates={gates} camU={camU} />
       <FinishLine track={track} />
       <Pulse track={track} camU={camU} trigger={pulseTrigger} glowRef={glowRef} />
-      <RacingCar track={track} camU={camU} />
+      <RacingCar track={track} camU={camU} gates={gates} gateIds={gateIds} />
       <HeroObjects track={track} pointer={pointer} />
       <gridHelper args={[400, 140, "#2a2925", "#1a1a17"]} position={[0, -1.4, -80]} />
     </>
@@ -359,6 +362,14 @@ function Scene({ gates }: { gates: number[] }) {
  */
 export default function TrackScene({ lite = false }: { lite?: boolean }) {
   const [gates, setGates] = useState<number[]>([]);
+  const [gateIds, setGateIds] = useState<string[]>([]);
+  // nothing to draw while the tab is in the background
+  const [hidden, setHidden] = useState(false);
+  useEffect(() => {
+    const sync = () => setHidden(document.hidden);
+    document.addEventListener("visibilitychange", sync);
+    return () => document.removeEventListener("visibilitychange", sync);
+  }, []);
 
   // Each homepage section after the hero gets a gantry at the point on
   // the track the camera reaches when that section hits the top of the
@@ -369,6 +380,7 @@ export default function TrackScene({ lite = false }: { lite?: boolean }) {
       const max = document.documentElement.scrollHeight - window.innerHeight;
       if (max <= 0) return;
       const sections = Array.from(document.querySelectorAll("main section")).slice(1);
+      setGateIds(sections.map((s) => s.id));
       setGates(
         sections.map((s) => {
           const top = s.getBoundingClientRect().top + window.scrollY;
@@ -387,8 +399,8 @@ export default function TrackScene({ lite = false }: { lite?: boolean }) {
 
   return createPortal(
     <div className="fixed inset-0 -z-10 pointer-events-none" aria-hidden="true">
-      <Canvas camera={{ position: [0, CAM_HEIGHT, 0], fov: CAM_FOV, near: 0.1, far: 120 }} dpr={lite ? [1, 1.25] : [1, 1.5]} gl={{ antialias: true, alpha: true, powerPreference: lite ? "low-power" : "high-performance" }}>
-        <Scene gates={gates} />
+      <Canvas frameloop={hidden ? "never" : "always"} camera={{ position: [0, CAM_HEIGHT, 0], fov: CAM_FOV, near: 0.1, far: 120 }} dpr={lite ? [1, 1.25] : [1, 1.5]} gl={{ antialias: true, alpha: true, powerPreference: lite ? "low-power" : "high-performance" }}>
+        <Scene gates={gates} gateIds={gateIds} lite={lite} />
       </Canvas>
     </div>,
     document.body

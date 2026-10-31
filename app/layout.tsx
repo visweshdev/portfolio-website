@@ -54,10 +54,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col text-fg">
         <LightsOut />
         <HoverDistortFilter />
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[500] focus:rounded-full focus:bg-fg focus:px-4 focus:py-2 focus:text-bg label-mono"
+        >
+          Skip to content
+        </a>
         <SmoothScroll>
           <CustomCursor />
           <Navigation />
-          <main className="flex-1">{children}</main>
+          <main id="main" tabIndex={-1} className="flex-1 outline-none">{children}</main>
           <Footer />
         </SmoothScroll>
       </body>
