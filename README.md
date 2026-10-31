@@ -29,7 +29,8 @@ build time, and all content lives in typed files under `data/`.
   and shouts from the cockpit; he calls out each section as the car
   passes its gantry; at the bottom of the page the car pulls up past the
   chequered line and he climbs out to wave ("let's talk ↓"), hopping back
-  in if you scroll up. Easter eggs: double-click him for a spin, click the
+  in if you scroll up. A speech bubble is skipped whenever it would cover text, an image or a
+  control on the page. Easter eggs: double-click him for a spin, click the
   moving car five times quickly for a donut. With sound on, the car makes
   a short engine note as it pulls away. Keyboard users get a "Send the
   driver to the car" button (visible on focus). Once he's in, the car drives just ahead of the camera as you scroll — parked when
@@ -246,9 +247,10 @@ component to change content.
 - The Three.js hero scene, and every arcade game, are lazy-loaded
   (`next/dynamic`, `ssr: false`) as separate JS chunks — none of that code
   ships on pages that don't use it.
-- three.js is never loaded under reduced motion, and otherwise only after
-  the loading screen has cleared and the browser is idle, so the page
-  itself comes up first. On touch screens the track renders at a capped
+- three.js is never loaded under reduced motion. Otherwise it loads while
+  the lights-out loading screen is up, and the lights stay on until the
+  track has drawn its first frame (capped at 6s), so lights-out reveals
+  the finished 3D hero rather than its plain fallback. On touch screens the track renders at a capped
   pixel ratio with fewer particles, and the scene stops drawing while the
   tab is hidden; and the photo wall uses small resized textures from Next's image optimizer.
 - The glow on the 3D track is layered additive tubes rather than a

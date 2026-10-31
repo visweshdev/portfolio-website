@@ -71,6 +71,44 @@ const DOUBLE_CLICK_MS = 260;
  *           and he jumps back in.
  * Double-click him while he waits and he does a spin.
  */
+// What the speech bubble must never sit on top of.
+const CONTENT = "p, h1, h2, h3, h4, h5, li, a, button, img, pre, figure, label, input, [role='dialog']";
+
+/** Is there page content at this screen point? Text counts only where the
+ *  glyphs actually are, not the empty rest of a full-width block. */
+function overContent(px: number, py: number) {
+  // the bubble and the 3D canvas ignore the pointer, so this finds
+  // whatever page element is underneath
+  const el = document.elementFromPoint(px, py)?.closest(CONTENT);
+  if (!el) return false;
+  if (el.matches("img, figure, input, [role='dialog']")) return true;
+  // measure only the text itself (a range over an element also returns the
+  // boxes of whole child elements, e.g. the headline's full-width lines)
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  const range = document.createRange();
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+    if (!n.textContent?.trim()) continue;
+    range.selectNodeContents(n);
+    for (const r of range.getClientRects()) {
+      if (px >= r.left - 6 && px <= r.right + 6 && py >= r.top - 6 && py <= r.bottom + 6) return true;
+    }
+  }
+  return false;
+}
+
+/** Would a bubble anchored at (x, y) (its bottom-centre) cover page content? */
+function coversContent(x: number, y: number, w: number, h: number) {
+  const top = y - h - 10; // matches the bubble's margin-top in globals.css
+  const rows = [top + 4, top + h / 2, top + h - 4];
+  const cols = [x - w / 2 + 6, x, x + w / 2 - 6];
+  for (const py of rows) {
+    for (const px of cols) {
+      if (overContent(px, py)) return true;
+    }
+  }
+  return false;
+}
+
 type Mode = "parked" | "walking" | "hopping" | "merging" | "racing" | "finishing" | "finished";
 
 /**
@@ -534,6 +572,9 @@ export default function RacingCar({
         const x = ((v.tmp.x + 1) / 2) * window.innerWidth;
         const y = ((1 - v.tmp.y) / 2) * window.innerHeight;
         el.style.transform = `translate(${x}px, ${y}px) translate(-50%, -100%)`;
+        // never cover what someone is reading: skip the line if the bubble
+        // would sit over text, an image or a control on the page
+        show = !coversContent(x, y, el.offsetWidth, el.offsetHeight);
       }
     }
     el.classList.toggle("is-on", show);

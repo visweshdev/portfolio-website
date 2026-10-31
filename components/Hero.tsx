@@ -108,32 +108,28 @@ export default function Hero() {
   // false on the server and during hydration, so the static curve is what
   // ships in the HTML and the 3D chunk only loads in the browser
   const hydrated = useSyncExternalStore(noop, () => true, () => false);
-  // three.js is a big download to parse, so it waits until the loading
-  // screen has cleared and the browser is idle: the page itself comes up
-  // first, then the track fades in behind it.
-  const [sceneReady, setSceneReady] = useState(false);
+  // three.js loads while the lights-out loading screen is up (it holds the
+  // lights until the track has drawn — see LightsOut), so when the lights
+  // go out the full 3D hero is already there. Started on the next idle
+  // moment so it doesn't fight hydration.
+  const [loadScene, setLoadScene] = useState(false);
   useEffect(() => {
+    if (reduced) return;
+    (window as unknown as { __sceneExpected?: boolean }).__sceneExpected = true;
     let idle = 0;
     let timer = 0;
-    const start = () => {
-      if (typeof window.requestIdleCallback === "function") {
-        idle = window.requestIdleCallback(() => setSceneReady(true), { timeout: 1500 });
-      } else {
-        timer = window.setTimeout(() => setSceneReady(true), 300); // Safari
-      }
-    };
-    if (document.documentElement.classList.contains("intro")) {
-      window.addEventListener(INTRO_DONE_EVENT, start, { once: true });
+    if (typeof window.requestIdleCallback === "function") {
+      idle = window.requestIdleCallback(() => setLoadScene(true), { timeout: 300 });
     } else {
-      start();
+      timer = window.setTimeout(() => setLoadScene(true), 50); // Safari
     }
     return () => {
-      window.removeEventListener(INTRO_DONE_EVENT, start);
+      (window as unknown as { __sceneExpected?: boolean }).__sceneExpected = false;
       if (idle) window.cancelIdleCallback(idle);
       window.clearTimeout(timer);
     };
-  }, []);
-  const show3d = hydrated && !reduced && sceneReady;
+  }, [reduced]);
+  const show3d = hydrated && !reduced && loadScene;
 
   useEffect(() => {
     const gsapInstance = ensureGsap();
