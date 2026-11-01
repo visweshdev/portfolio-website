@@ -11,7 +11,9 @@ const TONE_CLASSES: Record<NonNullable<Props["tone"]>, string> = {
   accent: "bg-accent !text-[#160f02]",
   red: "bg-accent-red !text-[#160f02]",
   paper: "paper",
-  outline: "border border-fg-faint text-fg-muted bg-bg/60 backdrop-blur-sm",
+  // solid-ish fill, no blur: a blur over the moving 3D track has to be
+  // redrawn every frame, which makes phones stutter
+  outline: "border border-fg-faint text-fg-muted bg-bg/85",
 };
 
 /** Small pill/sticker label — a technology tag or short annotation. */

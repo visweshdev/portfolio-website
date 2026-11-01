@@ -33,35 +33,39 @@ export type Project = {
 
 export const projects: Project[] = [
   {
-    slug: "recoverrl",
+    slug: "covenant",
     index: "01",
-    title: "RecoverRL",
+    title: "Covenant",
     year: "2026",
-    tagline: "FAILURE → FEATURES → LEARNED POLICY → VERIFY",
-    stack: ["Python", "Google ADK", "Gemini", "scikit-learn", "Contextual bandits"],
-    status: "in-development",
+    tagline: "PLAIN ENGLISH → RULES → CHECKS → ENFORCED",
+    stack: ["Python", "Claude Code hooks", "MCP", "Git hooks", "GitHub Actions", "Docker"],
     summary:
-      "Agents that learn how to recover: when a tool call or multi-step workflow fails, a learned policy picks the right recovery strategy instead of blindly retrying.",
+      "Rules for coding agents that actually hold: write them in plain English — \"don't change public APIs, run tests before committing\" — and Covenant turns them into checks enforced live, in git, and in CI.",
     stages: [
-      { label: "TOOL CALL FAILS" },
-      { label: "FAILURE FEATURES", note: "error, history, environment state" },
-      { label: "LEARNED POLICY", note: "retry · inspect · refresh schema · replan · escalate" },
-      { label: "VERIFY COMPLETION" },
+      { label: "PLAIN-ENGLISH RULES" },
+      { label: "COMPILE", note: "grounded in the repo → covenant.yaml" },
+      { label: "AGENT WORKS", note: "Claude Code · Cursor · Codex · any MCP client" },
+      { label: "CHECK OUTCOMES", note: "API surface · protected files · order of events" },
+      { label: "BLOCK + EXPLAIN", note: "rule · evidence · fix" },
     ],
-    idea: "A typical agent handles failure the same way every time — retry the API call, ask the LLM to reflect, or restart the whole task. RecoverRL learns to choose the right response from the failure itself, the execution history, and the current state of the environment.",
+    idea: "You tell an agent \"don't change public APIs, don't delete user data, run tests before committing.\" It usually listens. Covenant makes sure it does — by checking outcomes rather than tool calls: the API surface after the edits, what happened to protected files however they were touched, and whether the tests passed after the last edit and before the commit.",
     system: [
-      "When a tool call fails, features are extracted from the error, the execution trace so far, and the environment state.",
-      "A learned recovery policy — supervised learning or a contextual bandit trained on execution traces — selects one action: retry, inspect state, refresh the schema, replan, or escalate.",
-      "Task completion is then verified, so a recovery only counts if the task actually finishes.",
+      "Its compiler reads plain-English rules, grounds them in the repo, and binds each one to a checker in covenant.yaml.",
+      "Checkers cover public APIs in Python, TypeScript, Go, Rust and Java; protected files and SQLite rows (restored from a snapshot if lost); destructive migrations; dependency changes; folder scope; secrets and skipped tests; change size; and the order and count of the agent's steps.",
+      "Risky commands — force pushes, deploys, destructive SQL and more, 16 categories — are refused before they run, with a network allowlist and time, action and cost budgets.",
+      "Enforced through Claude Code hooks, an MCP server for Cursor, Codex and others, git pre-commit and pre-push hooks, a GitHub Action that judges each PR by its base commit's rules, a VS Code panel, and a Docker sandbox.",
+      "When a rule is broken, the agent gets the rule, the evidence and a fix; its explain command tells the story, and its undo command restores the working tree from a restore point.",
     ],
     process: [
-      "Built on the existing AgentGauntlet benchmark rather than a new failure-testing framework — the contribution is the learned policy and its results.",
-      "The policy is compared against fixed retries, rule-based recovery, and LLM self-reflection.",
-      "Evaluation tracks task recovery rate, cost per successful recovery, duplicate side effects, and performance on unfamiliar tools and task types.",
+      "Benchmarked on CovenantBench, plus live trials with Claude Code on four real open-source repos (TinyDB, itsdangerous, humanize, prettytable) — each with an honest task and a trap task.",
+      "Published on PyPI as covenant-agents, with tests in CI, on Windows, macOS and Linux.",
     ],
     result:
-      "In development — the recovery policy and its comparison against baseline strategies are being built and evaluated now.",
-    handLabel: "fail → learn → recover",
+      "Violations per task fell from 1.17 to 0 on CovenantBench with task success unchanged at 100%. On the four real repos every honest task committed and every trap was refused or blocked — at about 0.2 seconds per agent action.",
+    handLabel: "rules that hold",
+    links: {
+      repo: "https://github.com/visweshdev/Covenant",
+    },
   },
   {
     slug: "remem",

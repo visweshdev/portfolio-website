@@ -11,7 +11,7 @@ build time, and all content lives in typed files under `data/`.
 
 ## Features
 
-- **Collage visuals you can drag** — the RecoverRL, ReMem, PaperForge and URL-Shortener project
+- **Collage visuals you can drag** — the Covenant, ReMem, PaperForge and URL-Shortener project
   scrapbooks are made of individually draggable pieces (pointer events,
   no snap-back), not static images. On touch screens they stay still so
   swiping over them scrolls the page and taps reach the project link.
@@ -23,7 +23,7 @@ build time, and all content lives in typed files under `data/`.
   of light down the line. A wireframe F1 car waits on the line with a
   low-poly Viswesh (white tee, grey jeans, white sneakers) standing beside
   it. He says hi once the intro clears, follows your cursor with his head,
-  waves and says something (in a speech bubble) when you hover him; click
+  waves and keeps talking (speech bubbles, one line after another) for as long as you hover him, or press and hold on a phone; click
   him and he walks over, climbs into the cockpit and drives off (scroll
   first and he jogs over by himself). Click the moving car and he waves
   and shouts from the cockpit; he calls out each section as the car
@@ -250,9 +250,11 @@ component to change content.
 - three.js is never loaded under reduced motion. Otherwise it loads while
   the lights-out loading screen is up, and the lights stay on until the
   track has drawn its first frame (capped at 6s), so lights-out reveals
-  the finished 3D hero rather than its plain fallback. On touch screens the track renders at a capped
-  pixel ratio with fewer particles, and the scene stops drawing while the
-  tab is hidden; and the photo wall uses small resized textures from Next's image optimizer.
+  the finished 3D hero rather than its plain fallback. On touch screens the track renders at 1x pixel ratio with fewer
+  particles and no wide halo glow, and the scene stops drawing while the
+  tab is hidden. All 3D shaders are prepared behind the loading screen so
+  nothing stalls mid-scroll, and nothing on the page uses backdrop blur
+  (re-blurring over a moving 3D background makes phones stutter); and the photo wall uses small resized textures from Next's image optimizer.
 - The glow on the 3D track is layered additive tubes rather than a
   post-processing pass, so there's no extra render target per frame.
 - The hero's 3D render loop pauses automatically (via `IntersectionObserver`)

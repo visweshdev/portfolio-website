@@ -31,7 +31,7 @@ export default function ArcadeModal({ gameId, onClose }: { gameId: string; onClo
       aria-label={title}
       tabIndex={-1}
       data-lenis-prevent
-      className="fixed inset-0 z-[100] bg-bg/95 backdrop-blur-sm flex flex-col items-center px-4 py-12 overflow-y-auto outline-none"
+      className="fixed inset-0 z-[100] bg-bg/[0.97] flex flex-col items-center px-4 py-12 overflow-y-auto outline-none"
       onClick={(e) => {
         if (e.target === e.currentTarget) closeWithSound();
       }}

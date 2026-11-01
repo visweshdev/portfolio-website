@@ -7,7 +7,12 @@ import SplitHeading from "@/components/SplitHeading";
 
 export default function About({ showHeading = true }: { showHeading?: boolean }) {
   return (
-    <section id="about" className="relative py-20 md:py-28 bg-bg-raised/80" aria-label="About">
+    <section
+      id="about"
+      // under the About page's own big title, skip the full top padding
+      className={`relative bg-bg-raised/80 ${showHeading ? "py-20 md:py-28" : "pt-6 pb-20 md:pt-10 md:pb-28"}`}
+      aria-label="About"
+    >
       <div className="page-pad grid lg:grid-cols-[1.1fr_1fr] gap-14 lg:gap-20">
         <Reveal>
           {showHeading && (

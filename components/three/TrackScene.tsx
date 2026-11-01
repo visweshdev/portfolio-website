@@ -38,7 +38,15 @@ function scrollProgress() {
 }
 
 /** The racing line itself: a bright core tube inside two soft additive "glow" tubes, plus the track's edge lines. */
-function TrackLine({ track, glowRef }: { track: TrackPath; glowRef: React.RefObject<THREE.MeshBasicMaterial | null> }) {
+function TrackLine({
+  track,
+  glowRef,
+  lite,
+}: {
+  track: TrackPath;
+  glowRef: React.RefObject<THREE.MeshBasicMaterial | null>;
+  lite: boolean;
+}) {
   const { core, glow, halo, edges } = useMemo(() => {
     const core = new THREE.TubeGeometry(track.curve, 900, 0.022, 6, false);
     const glow = new THREE.TubeGeometry(track.curve, 900, 0.12, 8, false);
@@ -73,9 +81,13 @@ function TrackLine({ track, glowRef }: { track: TrackPath; glowRef: React.RefObj
           depthWrite={false}
         />
       </mesh>
-      <mesh geometry={halo}>
-        <meshBasicMaterial color={ACCENT} transparent opacity={0.035} blending={THREE.AdditiveBlending} depthWrite={false} />
-      </mesh>
+      {/* the wide soft halo covers most of the screen near the camera —
+          on phones that overdraw costs more than it adds */}
+      {!lite && (
+        <mesh geometry={halo}>
+          <meshBasicMaterial color={ACCENT} transparent opacity={0.035} blending={THREE.AdditiveBlending} depthWrite={false} />
+        </mesh>
+      )}
       {edges.map((line, i) => (
         <primitive key={i} object={line} />
       ))}
@@ -307,9 +319,14 @@ function CameraRig({ track, camU, pointer }: { track: TrackPath; camU: React.Ref
 /** Tells the loading screen the track is on screen (after its first frame). */
 function ReadySignal() {
   const sent = useRef(false);
+  const { gl, scene, camera } = useThree();
   useFrame(() => {
     if (sent.current) return;
     sent.current = true;
+    // prepare every shader now, behind the loading screen, instead of the
+    // first time each object (gantries, finish line) scrolls into view —
+    // that mid-scroll stall is very visible on phones
+    gl.compile(scene, camera);
     (window as unknown as { __sceneReady?: boolean }).__sceneReady = true;
     window.dispatchEvent(new Event(SCENE_READY_EVENT));
   });
@@ -353,8 +370,8 @@ function Scene({ gates, gateIds, lite }: { gates: number[]; gateIds: string[]; l
       <directionalLight position={[4, 8, 6]} intensity={1.8} />
       <ReadySignal />
       <CameraRig track={track} camU={camU} pointer={pointer} />
-      <TrackLine track={track} glowRef={glowRef} />
-      <Particles track={track} count={lite ? 320 : PARTICLES} />
+      <TrackLine track={track} glowRef={glowRef} lite={lite} />
+      <Particles track={track} count={lite ? 180 : PARTICLES} />
       <Gates track={track} gates={gates} camU={camU} />
       <FinishLine track={track} />
       <Pulse track={track} camU={camU} trigger={pulseTrigger} glowRef={glowRef} />
@@ -413,7 +430,7 @@ export default function TrackScene({ lite = false }: { lite?: boolean }) {
 
   return createPortal(
     <div className="fixed inset-0 -z-10 pointer-events-none" aria-hidden="true">
-      <Canvas frameloop={hidden ? "never" : "always"} camera={{ position: [0, CAM_HEIGHT, 0], fov: CAM_FOV, near: 0.1, far: 120 }} dpr={lite ? [1, 1.25] : [1, 1.5]} gl={{ antialias: true, alpha: true, powerPreference: lite ? "low-power" : "high-performance" }}>
+      <Canvas frameloop={hidden ? "never" : "always"} camera={{ position: [0, CAM_HEIGHT, 0], fov: CAM_FOV, near: 0.1, far: 120 }} dpr={lite ? 1 : [1, 1.5]} gl={{ antialias: true, alpha: true, powerPreference: lite ? "low-power" : "high-performance" }}>
         <Scene gates={gates} gateIds={gateIds} lite={lite} />
       </Canvas>
     </div>,
