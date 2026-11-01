@@ -9,7 +9,12 @@ import SplitHeading from "@/components/SplitHeading";
 
 export default function Experience({ showHeading = true }: { showHeading?: boolean }) {
   return (
-    <section id="work" className="relative py-20 md:py-28 bg-bg-raised/80 overflow-hidden" aria-label="Work experience">
+    <section
+      id="work"
+      // under the Work page's own big title, skip the full top padding
+      className={`relative bg-bg-raised/80 overflow-hidden ${showHeading ? "py-20 md:py-28" : "pt-6 pb-20 md:pt-10 md:pb-28"}`}
+      aria-label="Work experience"
+    >
       <div className="page-pad grid lg:grid-cols-[1fr_1fr] gap-14 lg:gap-20">
         <Reveal>
           {showHeading && <SectionLabel index="03" title="WORK EXPERIENCE" />}

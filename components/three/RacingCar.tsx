@@ -56,6 +56,8 @@ const FINISH_SECONDS = 1.1;
 const SPIN_SECONDS = 0.8;
 const DONUT_SECONDS = 1.1;
 const DOUBLE_CLICK_MS = 260;
+const HOLD_MS = 350; // a press this long on a phone means "talk", not "tap"
+const LINE_SECONDS = 2.8; // how long each line stays while you keep hovering
 
 /**
  * parked  — the car waits on the line; Viswesh stands beside it.
@@ -71,6 +73,8 @@ const DOUBLE_CLICK_MS = 260;
  *           and he jumps back in.
  * Double-click him while he waits and he does a spin.
  */
+// Blocks the speech bubble must never overlap anywhere on them.
+const SOLID = "img, figure, input, [role='dialog'], .project-collage, .photo-wall, .paper, pre";
 // What the speech bubble must never sit on top of.
 const CONTENT = "p, h1, h2, h3, h4, h5, li, a, button, img, pre, figure, label, input, [role='dialog']";
 
@@ -79,9 +83,11 @@ const CONTENT = "p, h1, h2, h3, h4, h5, li, a, button, img, pre, figure, label, 
 function overContent(px: number, py: number) {
   // the bubble and the 3D canvas ignore the pointer, so this finds
   // whatever page element is underneath
-  const el = document.elementFromPoint(px, py)?.closest(CONTENT);
+  const hit = document.elementFromPoint(px, py);
+  // whole visual blocks count everywhere, not just where their text is
+  if (hit?.closest(SOLID)) return true;
+  const el = hit?.closest(CONTENT);
   if (!el) return false;
-  if (el.matches("img, figure, input, [role='dialog']")) return true;
   // measure only the text itself (a range over an element also returns the
   // boxes of whole child elements, e.g. the headline's full-width lines)
   const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
@@ -176,6 +182,11 @@ export default function RacingCar({
     ptrY: 0,
     ptrSeen: false, // has a mouse moved yet? (touch screens never set it)
     hoverMan: false,
+    holding: false, // a finger held on him (touch)
+    covered: false, // last result of the bubble-covers-content check
+    coverCheckAt: 0,
+    talking: false,
+    nextLineAt: 0,
     wave: 0, // 0 → 1 while he waves at the cursor
     cheer: 0, // 1 → 0 after the moving car is clicked: he waves from the cockpit
     hoverLine: 0,
@@ -199,6 +210,7 @@ export default function RacingCar({
   function say(text: string, seconds: number, from: "man" | "seat" = "man") {
     // `until` is set on the next frame, against the scene clock
     st.current.say = { text, until: -seconds, from, next: text };
+    st.current.coverCheckAt = 0; // check the new spot straight away
   }
 
   function startWalk(run: boolean) {
@@ -217,7 +229,8 @@ export default function RacingCar({
     const world = new THREE.Vector3();
     let hovering = false;
 
-    const overPageUi = (e: MouseEvent) =>
+    type Point = { clientX: number; clientY: number; target: EventTarget | null };
+    const overPageUi = (e: Point) =>
       !!(e.target as Element | null)?.closest("a, button, input, [data-cursor], [role='dialog']");
     // the speech bubble is plain DOM, positioned over his head each frame
     const el = document.createElement("div");
@@ -237,7 +250,7 @@ export default function RacingCar({
       else window.addEventListener(INTRO_DONE_EVENT, () => window.setTimeout(greet, 600), { once: true });
     }, 900);
 
-    const near = (e: MouseEvent, obj: THREE.Object3D | null, radius: number, lift = 0) => {
+    const near = (e: Point, obj: THREE.Object3D | null, radius: number, lift = 0) => {
       if (!obj || !obj.visible || overPageUi(e)) return false;
       ndc.set((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
       ray.setFromCamera(ndc, camera);
@@ -245,7 +258,7 @@ export default function RacingCar({
       world.y += lift;
       return ray.ray.distanceToPoint(world) < radius;
     };
-    const overMan = (e: MouseEvent) => near(e, man.current, MAN_HIT, 0.55 * MAN_SCALE);
+    const overMan = (e: Point) => near(e, man.current, MAN_HIT, 0.55 * MAN_SCALE);
     let pendingClick = 0;
     const overCar = (e: MouseEvent) => near(e, car.current, CAR_HIT);
 
@@ -254,23 +267,36 @@ export default function RacingCar({
       s.ptrX = (e.clientX / window.innerWidth) * 2 - 1;
       s.ptrY = -(e.clientY / window.innerHeight) * 2 + 1;
       s.ptrSeen = true;
-      const wasOver = s.hoverMan;
       s.hoverMan = (s.mode === "parked" || s.mode === "finished") && overMan(e);
-      if (s.hoverMan && !wasOver) {
-        if (s.mode === "finished") {
-          say(FINISH_LINES[s.finishLine % FINISH_LINES.length], 2.6);
-          s.finishLine += 1;
-        } else {
-          say(HOVER_LINES[s.hoverLine % HOVER_LINES.length], 2.6);
-          s.hoverLine += 1;
-        }
-      }
       const on = s.hoverMan || (s.mode === "racing" && overCar(e));
       if (on === hovering) return;
       hovering = on;
       document.documentElement.classList.toggle("car-hover", on);
     }
+    // phones: press and hold on him and he talks for as long as you hold;
+    // a quick tap still sends him to the car
+    let holdTimer = 0;
+    let suppressClickUntil = 0;
+    function onTouchStart(e: TouchEvent) {
+      const s = st.current;
+      const t = e.touches[0];
+      if (e.touches.length !== 1 || !(s.mode === "parked" || s.mode === "finished")) return;
+      if (!overMan({ clientX: t.clientX, clientY: t.clientY, target: e.target })) return;
+      window.clearTimeout(holdTimer);
+      holdTimer = window.setTimeout(() => {
+        st.current.holding = true;
+      }, HOLD_MS);
+    }
+    function onTouchEnd() {
+      window.clearTimeout(holdTimer);
+      if (st.current.holding) {
+        st.current.holding = false;
+        suppressClickUntil = performance.now() + 600; // the release isn't a tap
+      }
+    }
+
     function onClick(e: MouseEvent) {
+      if (performance.now() < suppressClickUntil) return;
       const s = st.current;
       if (s.mode === "parked" && overMan(e)) {
         // wait a beat: a second click turns it into a double-click spin
@@ -308,9 +334,16 @@ export default function RacingCar({
     window.addEventListener(DRIVER_GO_EVENT, onGo);
     window.addEventListener("mousemove", onMove);
     window.addEventListener("click", onClick);
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchend", onTouchEnd);
+    window.addEventListener("touchcancel", onTouchEnd);
     return () => {
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("click", onClick);
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchend", onTouchEnd);
+      window.removeEventListener("touchcancel", onTouchEnd);
+      window.clearTimeout(holdTimer);
       window.removeEventListener(DRIVER_GO_EVENT, onGo);
       window.clearTimeout(greetTimer);
       window.clearTimeout(pendingClick);
@@ -375,6 +408,20 @@ export default function RacingCar({
     }
     // scrolled back up from the finish: back in, and off again
     if (s.mode === "finished" && camNow < AT_END - 0.02) boardNow(s, "Back to it!");
+
+    // hover (or hold) him and he keeps talking, one line after another
+    const talk = (s.hoverMan || s.holding) && (s.mode === "parked" || s.mode === "finished");
+    if (talk && (!s.talking || t >= s.nextLineAt)) {
+      if (s.mode === "finished") {
+        say(FINISH_LINES[s.finishLine % FINISH_LINES.length], LINE_SECONDS + 0.2);
+        s.finishLine += 1;
+      } else {
+        say(HOVER_LINES[s.hoverLine % HOVER_LINES.length], LINE_SECONDS + 0.2);
+        s.hoverLine += 1;
+      }
+      s.nextLineAt = t + LINE_SECONDS;
+    }
+    s.talking = talk;
 
     animateMan(m, s, t, delta);
     animateSeated(s, t, delta);
@@ -507,7 +554,7 @@ export default function RacingCar({
       }
       // hover him and he waves back (and he waves goodbye at the finish)
       s.bye = Math.max(0, s.bye - delta);
-      s.wave += ((s.hoverMan || s.bye > 0 ? 1 : 0) - s.wave) * 0.12;
+      s.wave += ((s.hoverMan || s.holding || s.bye > 0 ? 1 : 0) - s.wave) * 0.12;
       const waveZ = -2.55 + Math.sin(t * 11) * 0.32;
       if (lArm) lArm.rotation.set(0.12 * (1 - s.wave), 0, 0.16); // hand toward the pocket
       if (rArm) rArm.rotation.set(0, 0, THREE.MathUtils.lerp(-0.07 + Math.sin(t * 1.6) * 0.01, waveZ, s.wave));
@@ -591,8 +638,13 @@ export default function RacingCar({
         const y = ((1 - v.tmp.y) / 2) * window.innerHeight;
         el.style.transform = `translate(${x}px, ${y}px) translate(-50%, -100%)`;
         // never cover what someone is reading: skip the line if the bubble
-        // would sit over text, an image or a control on the page
-        show = !coversContent(x, y, el.offsetWidth, el.offsetHeight);
+        // would sit over text, an image or a control on the page. Checking
+        // makes the browser measure the page, so only a few times a second.
+        if (t >= s.coverCheckAt) {
+          s.covered = coversContent(x, y, el.offsetWidth, el.offsetHeight);
+          s.coverCheckAt = t + 0.2;
+        }
+        show = !s.covered;
       }
     }
     el.classList.toggle("is-on", show);

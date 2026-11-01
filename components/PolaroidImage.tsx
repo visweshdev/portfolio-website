@@ -34,7 +34,7 @@ export default function PolaroidImage({
 
   return (
     <figure
-      className={`paper p-3 pb-5 w-full transition-transform duration-500 ease-out hover:-translate-y-2 hover:scale-[1.02] ${className}`}
+      className={`@container paper p-3 pb-5 w-full transition-transform duration-500 ease-out hover:-translate-y-2 hover:scale-[1.02] ${className}`}
       style={{ transform: `rotate(${photo.rotation}deg)` }}
     >
       {photo.src ? (
@@ -58,8 +58,10 @@ export default function PolaroidImage({
           </div>
         </div>
       )}
-      <figcaption className="mt-2.5 flex items-end justify-between gap-2">
-        <span className="label-hand text-base">{photo.caption}</span>
+      {/* side by side when there's room; on narrow prints (two-up on a
+          phone) the caption gets the full width and the tag goes below */}
+      <figcaption className="mt-2.5 flex flex-col items-start gap-1 @[260px]:flex-row @[260px]:items-end @[260px]:justify-between @[260px]:gap-2">
+        <span className="label-hand text-base leading-snug">{photo.caption}</span>
         <span className="label-mono !text-[9px] !text-[#6b6350] whitespace-nowrap">
           {CATEGORY_LABEL[photo.category]} · {photo.year}
         </span>

@@ -26,7 +26,7 @@ export default function PhotoLightbox({ photo, onClose }: { photo: Photo; onClos
       aria-label={photo.caption}
       tabIndex={-1}
       data-lenis-prevent
-      className="fixed inset-0 z-[100] bg-bg/95 backdrop-blur-sm flex flex-col items-center justify-center px-4 py-16 outline-none"
+      className="fixed inset-0 z-[100] bg-bg/[0.97] flex flex-col items-center justify-center px-4 py-16 outline-none"
       onClick={(e) => {
         if (e.target === e.currentTarget) closeWithSound();
       }}

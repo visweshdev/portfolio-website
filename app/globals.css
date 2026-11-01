@@ -140,7 +140,6 @@ a {
   height: 26px;
   background: var(--color-tape);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
-  backdrop-filter: blur(0.5px);
 }
 
 .tape::after {

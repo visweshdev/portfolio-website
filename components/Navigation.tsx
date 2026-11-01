@@ -71,7 +71,7 @@ export default function Navigation() {
           button never sit on top of photos or text */}
       <div
         aria-hidden="true"
-        className="lg:hidden pointer-events-none absolute inset-0 -z-10 bg-bg/80 backdrop-blur-md border-b border-fg-faint/15"
+        className="lg:hidden pointer-events-none absolute inset-0 -z-10 bg-bg/92 border-b border-fg-faint/15"
       />
       <nav
         className="page-pad flex items-center justify-between"
@@ -141,7 +141,7 @@ export default function Navigation() {
         <div className="page-pad lg:hidden">
           <div
             id="mobile-nav"
-            className="mt-3 flex flex-col gap-1 bg-bg-raised/95 backdrop-blur border border-fg-faint/30 rounded-2xl p-5"
+            className="mt-3 flex flex-col gap-1 bg-bg-raised/[0.98] border border-fg-faint/30 rounded-2xl p-5"
           >
             {navLinks.map((link) => (
               <Link

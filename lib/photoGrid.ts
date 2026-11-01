@@ -1,5 +1,6 @@
 // Asymmetric editorial spans — one clear feature frame, the rest
-// supporting it at different weights. Mobile always stacks to full width.
+// supporting it at different weights. On phones most prints go full width;
+// the two portrait shots sit side by side.
 // Shared by the homepage gallery and the /photography page.
 const SPANS = [
   "col-span-12 sm:col-span-7",
