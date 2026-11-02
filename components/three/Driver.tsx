@@ -9,9 +9,8 @@ const SKIN = "#b07a52";
 const TEE = "#eeece6";
 const JEANS = "#8b8d90";
 const SHOES = "#e6e3dc";
-const HAIR = "#17110d";
+const HAIR = "#2a1f18";
 const PRINT = "#c86a3a";
-const LINE = "#f5f5f0";
 
 /** The limbs a walk cycle moves. Filled in by ManModel via callback refs. */
 export type ManRig = {
@@ -27,32 +26,40 @@ export function emptyRig(): ManRig {
   return { body: null, lLeg: null, rLeg: null, lArm: null, rArm: null, head: null };
 }
 
-/** A solid, flat-shaded part with a faint outline so it reads on the dark page. */
+/** A smooth part with a little self-light so it never sinks into the dark page. */
 function Part({
   geometry,
   color,
-  outline = 0.18,
+  glow = 0.28,
   ...props
-}: { geometry: THREE.BufferGeometry; color: string; outline?: number } & React.ComponentProps<"group">) {
-  const edges = useMemo(() => new THREE.EdgesGeometry(geometry, 30), [geometry]);
+}: { geometry: THREE.BufferGeometry; color: string; glow?: number } & React.ComponentProps<"group">) {
   return (
     <group {...props}>
       <mesh geometry={geometry}>
-        {/* a little self-light so he never sinks into the dark page,
-            whichever way the scene lights hit him */}
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.32} flatShading roughness={0.85} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={glow} roughness={0.8} />
       </mesh>
-      {outline > 0 && (
-        <lineSegments geometry={edges}>
-          <lineBasicMaterial color={LINE} transparent opacity={outline} />
-        </lineSegments>
-      )}
     </group>
   );
 }
 
+/** Oversized tee: wider at the shoulders, rounding over into the neckline. */
+function teeGeometry() {
+  const profile = [
+    [0, 0], [0.16, 0], [0.163, 0.02], [0.152, 0.12], [0.158, 0.24],
+    [0.165, 0.3], [0.156, 0.345], [0.115, 0.372], [0.058, 0.385], [0, 0.388],
+  ].map(([x, y]) => new THREE.Vector2(x, y));
+  return new THREE.LatheGeometry(profile, 28);
+}
+
+// Fixed clumps so the hair looks messy but the same every time.
+const HAIR_CLUMPS: [number, number, number, number][] = [
+  [0.04, 0.085, 0.04, 0.042], [-0.03, 0.092, 0.045, 0.04], [0, 0.102, 0, 0.045],
+  [0.062, 0.06, -0.02, 0.038], [-0.062, 0.064, -0.012, 0.038], [0.022, 0.07, 0.07, 0.034],
+  [-0.045, 0.058, 0.064, 0.032], [0, 0.07, -0.07, 0.042], [0.05, 0.09, -0.04, 0.034],
+];
+
 /**
- * A low-poly figure of Viswesh, about 1 unit tall with the feet at y = 0,
+ * A stylised figure of Viswesh, about 1 unit tall with the feet at y = 0,
  * facing +z. Legs and arms are pivot groups (hip / shoulder) so a walk
  * cycle can swing them. `seated` drops the legs and puts the hands
  * forward on the wheel — the version that rides in the car.
@@ -60,22 +67,26 @@ function Part({
 export function ManModel({ rig, seated = false }: { rig?: ManRig; seated?: boolean }) {
   const g = useMemo(
     () => ({
-      leg: new THREE.CylinderGeometry(0.066, 0.078, 0.44, 7),
-      shoe: new THREE.BoxGeometry(0.11, 0.06, 0.2),
-      sole: new THREE.BoxGeometry(0.115, 0.018, 0.205),
-      hips: new THREE.CylinderGeometry(0.135, 0.13, 0.1, 8),
-      torso: new THREE.CylinderGeometry(0.165, 0.175, 0.36, 8),
-      sleeve: new THREE.CylinderGeometry(0.062, 0.068, 0.17, 7),
-      forearm: new THREE.CylinderGeometry(0.031, 0.028, 0.25, 6),
-      hand: new THREE.IcosahedronGeometry(0.036, 0),
-      neck: new THREE.CylinderGeometry(0.042, 0.046, 0.07, 6),
-      head: new THREE.IcosahedronGeometry(0.085, 1),
-      hair: new THREE.IcosahedronGeometry(0.097, 1),
-      fringe: new THREE.IcosahedronGeometry(0.05, 0),
-      print: new THREE.PlaneGeometry(0.09, 0.065),
-      eye: new THREE.SphereGeometry(0.0085, 8, 6),
-      brow: new THREE.BoxGeometry(0.03, 0.007, 0.006),
-      stache: new THREE.BoxGeometry(0.046, 0.009, 0.008),
+      // wide-leg jeans: a touch wider at the hem
+      leg: new THREE.CylinderGeometry(0.066, 0.08, 0.44, 18),
+      shoe: new THREE.CapsuleGeometry(0.048, 0.11, 6, 14),
+      sole: new THREE.CapsuleGeometry(0.052, 0.112, 4, 14),
+      hips: new THREE.CylinderGeometry(0.15, 0.142, 0.1, 20),
+      tee: teeGeometry(),
+      shoulder: new THREE.SphereGeometry(0.058, 16, 12),
+      sleeve: new THREE.CylinderGeometry(0.056, 0.064, 0.15, 16, 1, true),
+      forearm: new THREE.CapsuleGeometry(0.034, 0.2, 4, 12),
+      hand: new THREE.SphereGeometry(0.04, 14, 10),
+      neck: new THREE.CylinderGeometry(0.04, 0.046, 0.08, 14),
+      head: new THREE.SphereGeometry(0.085, 28, 20),
+      ear: new THREE.SphereGeometry(0.018, 10, 8),
+      nose: new THREE.SphereGeometry(0.012, 10, 8),
+      hairCap: new THREE.SphereGeometry(0.092, 24, 16),
+      clump: new THREE.SphereGeometry(1, 12, 9),
+      print: new THREE.PlaneGeometry(0.07, 0.05),
+      eye: new THREE.SphereGeometry(0.0085, 10, 8),
+      brow: new THREE.CapsuleGeometry(0.004, 0.026, 2, 6),
+      stache: new THREE.CapsuleGeometry(0.0055, 0.04, 2, 8),
     }),
     []
   );
@@ -86,20 +97,22 @@ export function ManModel({ rig, seated = false }: { rig?: ManRig; seated?: boole
   const arm = (side: 1 | -1) => (
     <group
       ref={set(side === 1 ? "lArm" : "rArm")}
-      position={[0.19 * side, 0.86, 0]}
+      position={[0.172 * side, 0.865, 0]}
       rotation={seated ? [-1.1, 0, 0.12 * side] : [0, 0, 0.08 * side]}
     >
+      <Part geometry={g.shoulder} color={TEE} position={[-0.012 * side, 0.004, 0]} scale={[1, 0.9, 0.85]} />
       <Part geometry={g.sleeve} color={TEE} position={[0, -0.07, 0]} />
-      <Part geometry={g.forearm} color={SKIN} position={[0, -0.27, 0]} outline={0.08} />
-      <Part geometry={g.hand} color={SKIN} position={[0, -0.41, 0]} outline={0} />
+      <Part geometry={g.forearm} color={SKIN} position={[0, -0.27, 0]} />
+      <Part geometry={g.hand} color={SKIN} position={[0, -0.415, 0.004]} scale={[0.9, 1.15, 0.8]} />
     </group>
   );
 
   const leg = (side: 1 | -1) => (
     <group ref={set(side === 1 ? "lLeg" : "rLeg")} position={[0.072 * side, 0.5, 0]}>
       <Part geometry={g.leg} color={JEANS} position={[0, -0.22, 0]} />
-      <Part geometry={g.shoe} color={SHOES} position={[0, -0.455, 0.035]} />
-      <Part geometry={g.sole} color="#bdb9b0" position={[0, -0.482, 0.035]} outline={0} />
+      {/* rounded sneaker on a slightly bigger sole */}
+      <Part geometry={g.shoe} color={SHOES} position={[0, -0.448, 0.035]} rotation={[Math.PI / 2, 0, 0]} scale={[1.05, 1, 0.68]} />
+      <Part geometry={g.sole} color="#bdb9b0" position={[0, -0.474, 0.035]} rotation={[Math.PI / 2, 0, 0]} scale={[1.05, 1, 0.22]} glow={0.2} />
     </group>
   );
 
@@ -107,36 +120,37 @@ export function ManModel({ rig, seated = false }: { rig?: ManRig; seated?: boole
     <group ref={set("body")}>
       {!seated && leg(1)}
       {!seated && leg(-1)}
-      <Part geometry={g.hips} color={JEANS} position={[0, 0.52, 0]} scale={[1, 1, 0.68]} />
-      <group scale={[1, 1, 0.62]}>
-        <Part geometry={g.torso} color={TEE} position={[0, 0.74, 0]} />
-      </group>
+      <Part geometry={g.hips} color={JEANS} position={[0, 0.535, 0]} scale={[1, 1, 0.66]} />
+      <Part geometry={g.tee} color={TEE} position={[0, 0.55, 0]} scale={[1, 1, 0.62]} />
       {/* the small painted print on the chest */}
-      <mesh geometry={g.print} position={[0, 0.79, 0.111]}>
+      <mesh geometry={g.print} position={[0, 0.8, 0.105]}>
         <meshBasicMaterial color={PRINT} />
       </mesh>
       {arm(1)}
       {arm(-1)}
-      <Part geometry={g.neck} color={SKIN} position={[0, 0.94, 0]} outline={0} />
-      <group ref={set("head")} position={[0, 1.02, 0]}>
-        <Part geometry={g.head} color={SKIN} scale={[0.92, 1.08, 0.98]} outline={0.1} />
-        {/* face: eyes, brows, the moustache */}
+      <Part geometry={g.neck} color={SKIN} position={[0, 0.95, 0]} />
+      <group ref={set("head")} position={[0, 1.03, 0]} scale={1.1}>
+        <Part geometry={g.head} color={SKIN} scale={[0.9, 1.08, 0.96]} />
         {[-1, 1].map((x) => (
           <group key={x}>
+            <Part geometry={g.ear} color={SKIN} position={[0.077 * x, 0, -0.004]} scale={[0.55, 1, 0.8]} />
             <mesh geometry={g.eye} position={[0.029 * x, 0.008, 0.076]}>
               <meshBasicMaterial color="#120c08" />
             </mesh>
-            <mesh geometry={g.brow} position={[0.03 * x, 0.03, 0.074]} rotation={[0, 0, -0.12 * x]}>
+            <mesh geometry={g.brow} position={[0.03 * x, 0.03, 0.072]} rotation={[0, 0, Math.PI / 2 - 0.12 * x]}>
               <meshBasicMaterial color={HAIR} />
             </mesh>
           </group>
         ))}
-        <mesh geometry={g.stache} position={[0, -0.034, 0.078]}>
+        <Part geometry={g.nose} color={SKIN} position={[0, -0.01, 0.083]} scale={[0.8, 1, 0.9]} />
+        <mesh geometry={g.stache} position={[0, -0.034, 0.077]} rotation={[0, 0, Math.PI / 2]}>
           <meshBasicMaterial color={HAIR} />
         </mesh>
-        <Part geometry={g.hair} color={HAIR} position={[0, 0.045, -0.012]} scale={[1, 0.72, 1.04]} outline={0.3} />
-        <Part geometry={g.fringe} color={HAIR} position={[0.035, 0.06, 0.06]} scale={[1.3, 0.6, 1]} outline={0.25} />
-        <Part geometry={g.fringe} color={HAIR} position={[-0.04, 0.055, 0.055]} scale={[1.1, 0.55, 1]} outline={0.25} />
+        {/* messy dark hair: a cap plus a few clumps on top and at the front */}
+        <Part geometry={g.hairCap} color={HAIR} position={[0, 0.035, -0.012]} scale={[1, 0.7, 1.05]} glow={0.4} />
+        {HAIR_CLUMPS.map(([x, y, z, r], i) => (
+          <Part key={i} geometry={g.clump} color={HAIR} position={[x, y, z]} scale={[r * 1.2, r * 0.75, r]} glow={0.4} />
+        ))}
       </group>
     </group>
   );
