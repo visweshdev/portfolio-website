@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="7" fill="#080807"/>
-  <rect x="0.5" y="0.5" width="31" height="31" rx="6.5" fill="none" stroke="#e8a33d" stroke-opacity="0.35"/>
-  <!-- left arm, then the lighter right arm: a folded-ribbon V -->
-  <path d="M3.5 6.5h6L16 22v4.5h-3.2z" fill="#e8a33d"/>
-  <path d="M16 22l6.5-15.5h6l-9.3 20H16z" fill="#f6c46f"/>
+  <!-- V: a bold left wedge, and a right stroke that sweeps up and tapers
+       to a point like a launch trajectory. -->
+  <rect width="32" height="32" rx="6" fill="#000"/>
+  <path d="M5.5 6.5h4.6L16.4 22l-1.6 4z" fill="#fff"/>
+  <path d="M14.8 26C18 16.5 22 9.5 28.5 4.5 23.5 10.5 19.5 18 16.4 26z" fill="#fff"/>
 </svg>
