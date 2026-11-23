@@ -5,8 +5,7 @@ const FLOW = ["URL", "HASH", "DATABASE", "REDIRECT"];
 
 /**
  * A compact technical-artifact visual for the URL Shortener project —
- * a small flow card plus its build/deploy stickers. Draggable, like the
- * PaperForge collage, for a consistent "physical desk" feel.
+ * a draggable flow card and build/deploy stickers.
  */
 export default function URLShortenerCollage({ className = "" }: { className?: string }) {
   return (

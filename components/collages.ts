@@ -1,4 +1,4 @@
-import PaperForgeCollage from "@/components/PaperForgeCollage";
+import RelayQueueCollage from "@/components/RelayQueueCollage";
 import URLShortenerCollage from "@/components/URLShortenerCollage";
 import ReMemCollage from "@/components/ReMemCollage";
 import CovenantCollage from "@/components/CovenantCollage";
@@ -10,6 +10,6 @@ import CovenantCollage from "@/components/CovenantCollage";
 export const COLLAGES: Record<string, React.ComponentType<{ className?: string }>> = {
   covenant: CovenantCollage,
   remem: ReMemCollage,
-  paperforge: PaperForgeCollage,
+  relayqueue: RelayQueueCollage,
   "url-shortener": URLShortenerCollage,
 };

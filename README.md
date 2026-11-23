@@ -11,7 +11,7 @@ build time, and all content lives in typed files under `data/`.
 
 ## Features
 
-- **Collage visuals you can drag** — the Covenant, ReMem, PaperForge and URL-Shortener project
+- **Collage visuals you can drag** — the Covenant, ReMem, RelayQueue and URL-Shortener project
   scrapbooks are made of individually draggable pieces (pointer events,
   no snap-back), not static images. On touch screens they stay still so
   swiping over them scrolls the page and taps reach the project link.
@@ -207,7 +207,7 @@ component to change content.
   DEVELOPMENT badge and isn't counted as "shipped". Array order is display
   order, so put what you're working on now first. If it needs its own
   scrapbook visual, build a `<YourProject>Collage.tsx` (see
-  `PaperForgeCollage.tsx` for the pattern — wrap each piece in
+  `RelayQueueCollage.tsx` for the pattern — wrap each piece in
   `DraggablePiece`) and register it in `components/collages.ts`.
 - **Work experience** — `data/experience.ts`.
 - **About text** — written directly in `components/About.tsx`.
