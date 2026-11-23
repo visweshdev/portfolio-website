@@ -73,14 +73,8 @@ export default function CustomCursor() {
     <div
       ref={dotRef}
       className="cursor-dot"
+      data-hovering={hovering || undefined}
       aria-hidden="true"
-      style={{
-        width: hovering ? 40 : 28,
-        height: hovering ? 40 : 28,
-        marginLeft: hovering ? -20 : -14,
-        marginTop: hovering ? -20 : -14,
-        background: hovering ? "rgba(110, 110, 110, 0.7)" : "rgba(110, 110, 110, 0.55)",
-      }}
     />
   );
 }

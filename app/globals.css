@@ -187,13 +187,14 @@ a {
 /* Custom cursor                      */
 /* ---------------------------------- */
 .cursor-dot {
+  --cursor-size: 14px;
   position: fixed;
   top: 0;
   left: 0;
-  width: 28px;
-  height: 28px;
-  margin-left: -14px;
-  margin-top: -14px;
+  width: var(--cursor-size);
+  height: var(--cursor-size);
+  margin-left: calc(var(--cursor-size) / -2);
+  margin-top: calc(var(--cursor-size) / -2);
   border-radius: 999px;
   background: rgba(110, 110, 110, 0.55);
   pointer-events: none;
@@ -202,6 +203,19 @@ a {
   will-change: transform;
   transition: width 0.2s var(--ease-out-soft), height 0.2s var(--ease-out-soft),
     margin 0.2s var(--ease-out-soft), background-color 0.2s var(--ease-out-soft);
+}
+
+.cursor-dot[data-hovering],
+html.hero-object-hover .cursor-dot,
+html.car-hover .cursor-dot {
+  --cursor-size: 22px;
+  background: rgba(110, 110, 110, 0.7);
+}
+
+/* Canvas objects signal hover on the root because they have no DOM element. */
+html.hero-object-hover .cursor-dot,
+html.car-hover .cursor-dot {
+  background: rgba(232, 163, 61, 0.45);
 }
 
 .has-custom-cursor,
@@ -641,17 +655,6 @@ main section[id] {
   scroll-margin-top: 72px;
 }
 
-/* Cursor over one of the hero's 3D models (HeroObjects.tsx): grow the
-   dot like it does over links — the model can't carry data-cursor, as
-   it lives in a canvas behind the page. */
-html.hero-object-hover .cursor-dot {
-  width: 40px !important;
-  height: 40px !important;
-  margin-left: -20px !important;
-  margin-top: -20px !important;
-  background: rgba(232, 163, 61, 0.45) !important;
-}
-
 /* The driver's speech bubble (RacingCar.tsx), placed over his head each frame. */
 .driver-bubble {
   position: fixed;
@@ -685,13 +688,4 @@ html.hero-object-hover .cursor-dot {
 }
 .driver-bubble.is-on {
   opacity: 1;
-}
-
-/* Cursor over the waiting driver or the moving F1 car (RacingCar.tsx). */
-html.car-hover .cursor-dot {
-  width: 40px !important;
-  height: 40px !important;
-  margin-left: -20px !important;
-  margin-top: -20px !important;
-  background: rgba(232, 163, 61, 0.45) !important;
 }
