@@ -40,10 +40,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# editor/AI tooling — dev-time artifacts, regenerated locally, not part
-# of the actual site
-/.claude/
+# local tooling
 AGENTS.md
-CLAUDE.md
 .vscode/
 .idea/

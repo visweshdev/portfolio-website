@@ -38,13 +38,13 @@ export const projects: Project[] = [
     title: "Covenant",
     year: "2026",
     tagline: "PLAIN ENGLISH → RULES → CHECKS → ENFORCED",
-    stack: ["Python", "Claude Code hooks", "MCP", "Git hooks", "GitHub Actions", "Docker"],
+    stack: ["Python", "Agent hooks", "MCP", "Git hooks", "GitHub Actions", "Docker"],
     summary:
       "Rules for coding agents that actually hold: write them in plain English — \"don't change public APIs, run tests before committing\" — and Covenant turns them into checks enforced live, in git, and in CI.",
     stages: [
       { label: "PLAIN-ENGLISH RULES" },
       { label: "COMPILE", note: "grounded in the repo → covenant.yaml" },
-      { label: "AGENT WORKS", note: "Claude Code · Cursor · Codex · any MCP client" },
+      { label: "AGENT WORKS", note: "Cursor · Codex · other MCP clients" },
       { label: "CHECK OUTCOMES", note: "API surface · protected files · order of events" },
       { label: "BLOCK + EXPLAIN", note: "rule · evidence · fix" },
     ],
@@ -53,11 +53,11 @@ export const projects: Project[] = [
       "Its compiler reads plain-English rules, grounds them in the repo, and binds each one to a checker in covenant.yaml.",
       "Checkers cover public APIs in Python, TypeScript, Go, Rust and Java; protected files and SQLite rows (restored from a snapshot if lost); destructive migrations; dependency changes; folder scope; secrets and skipped tests; change size; and the order and count of the agent's steps.",
       "Risky commands — force pushes, deploys, destructive SQL and more, 16 categories — are refused before they run, with a network allowlist and time, action and cost budgets.",
-      "Enforced through Claude Code hooks, an MCP server for Cursor, Codex and others, git pre-commit and pre-push hooks, a GitHub Action that judges each PR by its base commit's rules, a VS Code panel, and a Docker sandbox.",
+      "Enforced through agent lifecycle hooks, an MCP server for Cursor, Codex and others, git pre-commit and pre-push hooks, a GitHub Action that judges each PR by its base commit's rules, a VS Code panel, and a Docker sandbox.",
       "When a rule is broken, the agent gets the rule, the evidence and a fix; its explain command tells the story, and its undo command restores the working tree from a restore point.",
     ],
     process: [
-      "Benchmarked on CovenantBench, plus live trials with Claude Code on four real open-source repos (TinyDB, itsdangerous, humanize, prettytable) — each with an honest task and a trap task.",
+      "Benchmarked on CovenantBench, with live agent trials on four open-source repos (TinyDB, itsdangerous, humanize, prettytable). Each trial included an honest task and a trap task.",
       "Published on PyPI as covenant-agents, with tests in CI, on Windows, macOS and Linux.",
     ],
     result:
@@ -88,7 +88,7 @@ export const projects: Project[] = [
       "Three calls: add facts, search before answering, and report feedback after — whether the task worked and which memories were used.",
       "Ranking combines similarity with usefulness learned from outcomes; context is picked by an expected-utility knapsack under a token budget instead of a fixed top-k.",
       "Every memory moves through an explicit lifecycle — active, low-value, compressed, archived, invalidated — with each transition logged. Nothing is deleted, replaced facts stay queryable \"as of\" a past date, and every decision can be inspected.",
-      "Ships as a Python API, an MCP server (so Claude and other MCP clients can use it as long-term memory) and a LangChain retriever, with pluggable embedders and FAISS/Chroma backends. Runs fully locally.",
+      "Ships as a Python API, an MCP server that gives compatible clients long-term memory, and a LangChain retriever, with pluggable embedders and FAISS/Chroma backends. Runs fully locally.",
     ],
     process: [
       "Benchmarked against plain similarity search on 7 synthetic task families across 15 held-out seeds never used for tuning.",
