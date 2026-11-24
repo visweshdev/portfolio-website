@@ -1,9 +1,9 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
-import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
+import { useEffect, useRef, useState } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import type { Photo } from "@/data/photography";
+import { photoWallSource, type Photo } from "@/data/photography";
 import { playSound } from "@/lib/sound";
 
 const RADIUS = 7;
@@ -14,16 +14,45 @@ const PHOTO_W = 2.05;
 const PHOTO_H = 2.5;
 const PAPER = "#ece5d4";
 
-/** A small, resized copy from Next's image optimizer — the 3D wall never needs the full-size file. */
-function textureUrl(src: string) {
-  return `/_next/image?url=${encodeURIComponent(src)}&w=828&q=75`;
-}
-
 type DragState = { down: boolean; startX: number; lastX: number; moved: number; velocity: number };
+
+/** One print can display as soon as its own texture has loaded. */
+function PrintImage({ src }: { src: string }) {
+  const [map, setMap] = useState<THREE.Texture | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const texture = new THREE.TextureLoader().load(src, (loaded) => {
+      if (!active) return;
+      loaded.colorSpace = THREE.SRGBColorSpace;
+
+      // Center crop for photos that aren't already sized to the window.
+      const imgAspect = loaded.image.width / loaded.image.height;
+      const boxAspect = PHOTO_W / PHOTO_H;
+      const width = Math.min(boxAspect / imgAspect, 1);
+      const height = Math.min(imgAspect / boxAspect, 1);
+      loaded.repeat.set(width, height);
+      loaded.offset.set((1 - width) / 2, (1 - height) / 2);
+      setMap(loaded);
+    });
+    return () => {
+      active = false;
+      texture.dispose();
+    };
+  }, [src]);
+
+  return (
+    <mesh position={[0, 0.12, 0.01]}>
+      <planeGeometry args={[PHOTO_W, PHOTO_H]} />
+      {map
+        ? <meshBasicMaterial key="photo" map={map} toneMapped={false} />
+        : <meshBasicMaterial key="loading" color="#292622" toneMapped={false} />}
+    </mesh>
+  );
+}
 
 function Polaroid({
   photo,
-  texture,
   index,
   count,
   hovered,
@@ -33,7 +62,6 @@ function Polaroid({
   onOpen,
 }: {
   photo: Photo;
-  texture: THREE.Texture;
   index: number;
   count: number;
   hovered: number | null;
@@ -45,28 +73,7 @@ function Polaroid({
   const group = useRef<THREE.Group>(null);
   const angle = (index - (count - 1) / 2) * SPACING;
   const baseY = index % 2 === 0 ? -0.25 : 0.35;
-
-  // A cover-fitted copy of the photo for its 4:5 window, like object-fit: cover.
-  const map = useMemo(() => {
-    const t = texture.clone();
-    t.colorSpace = THREE.SRGBColorSpace;
-    const img = t.image as { width: number; height: number } | undefined;
-    if (img) {
-      const imgAspect = img.width / img.height;
-      const boxAspect = PHOTO_W / PHOTO_H;
-      if (imgAspect > boxAspect) {
-        t.repeat.set(boxAspect / imgAspect, 1);
-        t.offset.set((1 - boxAspect / imgAspect) / 2, 0);
-      } else {
-        t.repeat.set(1, imgAspect / boxAspect);
-        t.offset.set(0, (1 - imgAspect / boxAspect) / 2);
-      }
-    }
-    t.needsUpdate = true;
-    return t;
-  }, [texture]);
-
-  useEffect(() => () => map.dispose(), [map]);
+  const src = photoWallSource(photo);
 
   useFrame((_, delta) => {
     const g = group.current;
@@ -105,10 +112,7 @@ function Polaroid({
         <planeGeometry args={[FRAME_W, FRAME_H]} />
         <meshBasicMaterial color={PAPER} />
       </mesh>
-      <mesh position={[0, 0.12, 0.01]}>
-        <planeGeometry args={[PHOTO_W, PHOTO_H]} />
-        <meshBasicMaterial map={map} toneMapped={false} />
-      </mesh>
+      {src && <PrintImage key={src} src={src} />}
     </group>
   );
 }
@@ -124,10 +128,6 @@ function Wall({
   yaw: React.RefObject<number>;
   onOpen: (p: Photo) => void;
 }) {
-  const textures = useLoader(
-    THREE.TextureLoader,
-    photos.map((p) => textureUrl(p.src as string))
-  );
   const [hovered, setHovered] = useState<number | null>(null);
   const camera = useThree((state) => state.camera);
   const elapsed = useRef(0);
@@ -156,7 +156,6 @@ function Wall({
         <Polaroid
           key={photo.id}
           photo={photo}
-          texture={textures[i]}
           index={i}
           count={photos.length}
           hovered={hovered}
@@ -241,9 +240,7 @@ export default function PhotoWall({ photos, onOpen, paused }: {
         gl={{ antialias: true, alpha: true }}
         frameloop={inView && !paused ? "always" : "demand"}
       >
-        <Suspense fallback={null}>
-          <Wall photos={photos} drag={drag} yaw={yaw} onOpen={onOpen} />
-        </Suspense>
+        <Wall photos={photos} drag={drag} yaw={yaw} onOpen={onOpen} />
       </Canvas>
     </div>
   );

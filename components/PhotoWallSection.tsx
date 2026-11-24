@@ -1,14 +1,23 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState } from "react";
-import { CATEGORY_LABEL, type Photo } from "@/data/photography";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { preload } from "react-dom";
+import { CATEGORY_LABEL, photoWallSource, type Photo } from "@/data/photography";
 import PhotoLightbox from "@/components/PhotoLightbox";
+import { INTRO_DONE_EVENT, SCENE_READY_EVENT } from "@/lib/intro";
 import { playSound } from "@/lib/sound";
 import { useRichMotion } from "@/lib/useRichMotion";
 
 // three.js only loads for visitors who'll actually see the wall.
 const PhotoWall = dynamic(() => import("@/components/three/PhotoWall"), { ssr: false, loading: () => null });
+
+function preloadPrints(photos: Photo[]) {
+  for (const photo of photos) {
+    const src = photoWallSource(photo);
+    if (src) preload(src, { as: "image", crossOrigin: "anonymous" });
+  }
+}
 
 /**
  * The 3D photo wall (homepage photography section and /photography) — for mouse/trackpad visitors
@@ -26,18 +35,38 @@ export default function PhotoWallSection({ photos }: { photos: Photo[] }) {
   const [open, setOpen] = useState<Photo | null>(null);
   const [loadWall, setLoadWall] = useState(false);
   const wallRef = useRef<HTMLDivElement>(null);
-  const withImages = photos.filter((p) => p.src);
+  const withImages = useMemo(() => photos.filter((photo) => photo.src), [photos]);
 
   useEffect(() => {
-    if (!rich || loadWall || !wallRef.current) return;
+    const wall = wallRef.current;
+    if (!rich || !wall) return;
+
+    // Give the prints facing the visitor a head start once the hero has
+    // painted. The offscreen wall still allocates no WebGL context.
+    const center = Math.floor(withImages.length / 2);
+    const warmCenter = () => preloadPrints(withImages.slice(Math.max(0, center - 1), center + 2));
+    let warmTimer: number | undefined;
+    if (document.documentElement.classList.contains("intro")) {
+      window.addEventListener(SCENE_READY_EVENT, warmCenter, { once: true });
+      window.addEventListener(INTRO_DONE_EVENT, warmCenter, { once: true });
+    } else {
+      warmTimer = window.setTimeout(warmCenter, 300);
+    }
+
     const observer = new IntersectionObserver(([entry]) => {
       if (!entry.isIntersecting) return;
+      preloadPrints(withImages);
       setLoadWall(true);
       observer.disconnect();
-    }, { rootMargin: "700px 0px" });
-    observer.observe(wallRef.current);
-    return () => observer.disconnect();
-  }, [rich, loadWall]);
+    }, { rootMargin: "1400px 0px" });
+    observer.observe(wall);
+    return () => {
+      observer.disconnect();
+      window.clearTimeout(warmTimer);
+      window.removeEventListener(SCENE_READY_EVENT, warmCenter);
+      window.removeEventListener(INTRO_DONE_EVENT, warmCenter);
+    };
+  }, [rich, withImages]);
 
   return (
     <div role="region" aria-label="Photo wall" className="photo-wall mt-12">
