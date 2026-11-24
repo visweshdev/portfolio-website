@@ -20,13 +20,16 @@ export default function SkillsTicker() {
 
   useEffect(() => {
     const track = trackRef.current;
-    if (!track || !motionAllowed()) return;
+    const band = track?.parentElement;
+    const row = track?.firstElementChild;
+    if (!track || !band || !row || !motionAllowed()) return;
     ensureGsap();
-    track.dataset.running = "true";
+    const setX = gsap.quickSetter(track, "x", "px");
 
     let x = 0;
     let dir = -1;
     let lastY = window.scrollY;
+    let width = row.getBoundingClientRect().width;
     let boost = 0;
     // drag state: while held, the band follows the pointer; on release it
     // keeps the throw's momentum and decays back into its normal drift
@@ -35,21 +38,24 @@ export default function SkillsTicker() {
     let throwVelocity = 0; // px per second
 
     const wrap = (value: number) => {
-      const half = track!.scrollWidth / 2;
-      if (half <= 0) return value;
-      while (value <= -half) value += half;
-      while (value > 0) value -= half;
-      return value;
+      if (width <= 0) return 0;
+      return ((value % width) - width) % width;
     };
 
-    const band = track.parentElement!;
-    function onDown(e: PointerEvent) {
+    const resize = new ResizeObserver(([entry]) => {
+      width = entry.contentRect.width;
+      x = wrap(x);
+      setX(x);
+    });
+    resize.observe(row);
+
+    const onDown = (e: PointerEvent) => {
       dragging = true;
       lastPointerX = e.clientX;
       throwVelocity = 0;
       band.setPointerCapture(e.pointerId);
       band.dataset.dragging = "true";
-    }
+    };
     function onMove(e: PointerEvent) {
       if (!dragging) return;
       const dx = e.clientX - lastPointerX;
@@ -57,12 +63,12 @@ export default function SkillsTicker() {
       x = wrap(x + dx);
       throwVelocity = dx * 60;
       if (dx !== 0) dir = dx < 0 ? -1 : 1;
-      gsap.set(track, { x });
+      setX(x);
     }
-    function onUp() {
+    const onUp = () => {
       dragging = false;
       delete band.dataset.dragging;
-    }
+    };
     // trackpad two-finger sideways swipe (or a horizontal mouse wheel):
     // scrub the band. Mostly-vertical gestures are left alone so the
     // page still scrolls normally over it.
@@ -73,7 +79,7 @@ export default function SkillsTicker() {
       x = wrap(x - e.deltaX);
       throwVelocity = -e.deltaX * 30;
       dir = e.deltaX > 0 ? -1 : 1;
-      gsap.set(track, { x });
+      setX(x);
     }
     band.addEventListener("wheel", onWheel, { passive: false });
     band.addEventListener("pointerdown", onDown);
@@ -93,18 +99,29 @@ export default function SkillsTicker() {
       boost += (target - boost) * 0.1;
       throwVelocity *= Math.pow(0.05, dt); // momentum fades within ~a second
       x = wrap(x + dir * (BASE_SPEED + boost * MAX_BOOST) * dt + throwVelocity * dt);
-      gsap.set(track, { x });
+      setX(x);
     }
 
-    gsap.ticker.add(tick);
+    const visibility = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        lastY = window.scrollY;
+        boost = 0;
+        gsap.ticker.add(tick);
+      } else {
+        gsap.ticker.remove(tick);
+      }
+    });
+    visibility.observe(band);
+
     return () => {
+      visibility.disconnect();
+      resize.disconnect();
       gsap.ticker.remove(tick);
       band.removeEventListener("wheel", onWheel);
       band.removeEventListener("pointerdown", onDown);
       band.removeEventListener("pointermove", onMove);
       band.removeEventListener("pointerup", onUp);
       band.removeEventListener("pointercancel", onUp);
-      delete track.dataset.running;
       gsap.set(track, { clearProps: "transform" });
     };
   }, []);

@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import * as THREE from "three";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 
 // Colours taken from the reference photo: oversized white tee with a small
 // print, washed grey wide-leg jeans, white sneakers, dark messy hair.
@@ -58,6 +59,19 @@ const HAIR_CLUMPS: [number, number, number, number][] = [
   [-0.045, 0.058, 0.064, 0.032], [0, 0.07, -0.07, 0.042], [0.05, 0.09, -0.04, 0.034],
 ];
 
+/** The cap and clumps share a material and always move with the head. */
+function hairGeometry() {
+  const cap = new THREE.SphereGeometry(0.092, 24, 16)
+    .scale(1, 0.7, 1.05).translate(0, 0.035, -0.012);
+  const clumps = HAIR_CLUMPS.map(([x, y, z, r]) =>
+    new THREE.SphereGeometry(1, 12, 9).scale(r * 1.2, r * 0.75, r).translate(x, y, z)
+  );
+  const parts = [cap, ...clumps];
+  const hair = mergeGeometries(parts)!;
+  parts.forEach((part) => part.dispose());
+  return hair;
+}
+
 /**
  * A stylised figure of Viswesh, about 1 unit tall with the feet at y = 0,
  * facing +z. Legs and arms are pivot groups (hip / shoulder) so a walk
@@ -81,8 +95,7 @@ export function ManModel({ rig, seated = false }: { rig?: ManRig; seated?: boole
       head: new THREE.SphereGeometry(0.085, 28, 20),
       ear: new THREE.SphereGeometry(0.018, 10, 8),
       nose: new THREE.SphereGeometry(0.012, 10, 8),
-      hairCap: new THREE.SphereGeometry(0.092, 24, 16),
-      clump: new THREE.SphereGeometry(1, 12, 9),
+      hair: hairGeometry(),
       print: new THREE.PlaneGeometry(0.07, 0.05),
       eye: new THREE.SphereGeometry(0.0085, 10, 8),
       brow: new THREE.CapsuleGeometry(0.004, 0.026, 2, 6),
@@ -90,6 +103,9 @@ export function ManModel({ rig, seated = false }: { rig?: ManRig; seated?: boole
     }),
     []
   );
+  useEffect(() => () => {
+    Object.values(g).forEach((geometry) => geometry.dispose());
+  }, [g]);
   const set = (key: keyof ManRig) => (el: THREE.Group | null) => {
     if (rig) rig[key] = el;
   };
@@ -147,10 +163,7 @@ export function ManModel({ rig, seated = false }: { rig?: ManRig; seated?: boole
           <meshBasicMaterial color={HAIR} />
         </mesh>
         {/* messy dark hair: a cap plus a few clumps on top and at the front */}
-        <Part geometry={g.hairCap} color={HAIR} position={[0, 0.035, -0.012]} scale={[1, 0.7, 1.05]} glow={0.4} />
-        {HAIR_CLUMPS.map(([x, y, z, r], i) => (
-          <Part key={i} geometry={g.clump} color={HAIR} position={[x, y, z]} scale={[r * 1.2, r * 0.75, r]} glow={0.4} />
-        ))}
+        <Part geometry={g.hair} color={HAIR} glow={0.4} />
       </group>
     </group>
   );

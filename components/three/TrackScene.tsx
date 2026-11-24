@@ -32,11 +32,6 @@ function seededRandom(seed: number) {
   };
 }
 
-function scrollProgress() {
-  const max = document.documentElement.scrollHeight - window.innerHeight;
-  return max > 0 ? Math.min(Math.max(window.scrollY / max, 0), 1) : 0;
-}
-
 /** The racing line itself: a bright core tube inside two soft additive "glow" tubes, plus the track's edge lines. */
 function TrackLine({
   track,
@@ -48,9 +43,11 @@ function TrackLine({
   lite: boolean;
 }) {
   const { core, glow, halo, edges } = useMemo(() => {
-    const core = new THREE.TubeGeometry(track.curve, 900, 0.022, 6, false);
-    const glow = new THREE.TubeGeometry(track.curve, 900, 0.12, 8, false);
-    const halo = new THREE.TubeGeometry(track.curve, 600, 0.32, 8, false);
+    // The spline is gentle enough to use fewer rings without changing its
+    // path, width or glow layers. The driving lookup table stays full resolution.
+    const core = new THREE.TubeGeometry(track.curve, 480, 0.022, 6, false);
+    const glow = new THREE.TubeGeometry(track.curve, 360, 0.12, 8, false);
+    const halo = lite ? null : new THREE.TubeGeometry(track.curve, 300, 0.32, 8, false);
     const edges = [-1, 1].map((dir) => {
       const n = track.pos.length / 3;
       const arr = new Float32Array(n * 3);
@@ -64,7 +61,17 @@ function TrackLine({
       return new THREE.Line(geo, new THREE.LineBasicMaterial({ color: FG, transparent: true, opacity: 0.16 }));
     });
     return { core, glow, halo, edges };
-  }, [track]);
+  }, [track, lite]);
+
+  useEffect(() => () => {
+    core.dispose();
+    glow.dispose();
+    halo?.dispose();
+    for (const edge of edges) {
+      edge.geometry.dispose();
+      edge.material.dispose();
+    }
+  }, [core, glow, halo, edges]);
 
   return (
     <group>
@@ -83,7 +90,7 @@ function TrackLine({
       </mesh>
       {/* the wide soft halo covers most of the screen near the camera —
           on phones that overdraw costs more than it adds */}
-      {!lite && (
+      {halo && (
         <mesh geometry={halo}>
           <meshBasicMaterial color={ACCENT} transparent opacity={0.035} blending={THREE.AdditiveBlending} depthWrite={false} />
         </mesh>
@@ -97,7 +104,6 @@ function TrackLine({
 
 /** Points of light streaming down the track like data — or a speed trail. */
 function Particles({ track, count }: { track: TrackPath; count: number }) {
-  const ref = useRef<THREE.Points>(null);
   const { geometry, seeds } = useMemo(() => {
     const positions = new Float32Array(count * 3);
     const colors = new Float32Array(count * 3);
@@ -115,7 +121,7 @@ function Particles({ track, count }: { track: TrackPath; count: number }) {
       };
     });
     const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3).setUsage(THREE.DynamicDrawUsage));
     geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
     return { geometry, seeds };
   }, [count]);
@@ -137,6 +143,11 @@ function Particles({ track, count }: { track: TrackPath; count: number }) {
     return new THREE.CanvasTexture(c);
   }, []);
 
+  useEffect(() => () => {
+    geometry.dispose();
+    sprite.dispose();
+  }, [geometry, sprite]);
+
   useFrame((_, delta) => {
     const attr = geometry.getAttribute("position") as THREE.BufferAttribute;
     const arr = attr.array as Float32Array;
@@ -153,7 +164,7 @@ function Particles({ track, count }: { track: TrackPath; count: number }) {
   });
 
   return (
-    <points ref={ref} geometry={geometry}>
+    <points geometry={geometry}>
       <pointsMaterial
         size={0.07}
         map={sprite}
@@ -202,6 +213,14 @@ function Gates({ track, gates, camU }: { track: TrackPath; gates: number[]; camU
       };
     });
   }, [gates, track, frame]);
+
+  useEffect(() => () => {
+    for (const gate of placed) {
+      gate.lineMat.dispose();
+      gate.lightMat.dispose();
+    }
+  }, [placed]);
+  useEffect(() => () => frame.dispose(), [frame]);
 
   useFrame(() => {
     for (const g of placed) {
@@ -290,18 +309,25 @@ function Pulse({
 }
 
 /** Drives the camera along the track from scroll position, with a slight sway toward the cursor. */
-function CameraRig({ track, camU, pointer }: { track: TrackPath; camU: React.RefObject<number>; pointer: PointerRef }) {
-  const { camera } = useThree();
+function CameraRig({ track, camU, pointer, scrollTarget }: {
+  track: TrackPath;
+  camU: React.RefObject<number>;
+  pointer: PointerRef;
+  scrollTarget: React.RefObject<number>;
+}) {
+  const camera = useThree((state) => state.camera);
   const p = useMemo(() => new THREE.Vector3(), []);
   const look = useMemo(() => new THREE.Vector3(), []);
   const side = useMemo(() => new THREE.Vector3(), []);
   const sway = useRef({ x: 0, y: 0 });
 
-  useFrame(() => {
-    const target = scrollProgress() * CAM_END;
-    camU.current += (target - camU.current) * 0.12;
-    sway.current.x += (pointer.current.x - sway.current.x) * 0.05;
-    sway.current.y += (pointer.current.y - sway.current.y) * 0.05;
+  useFrame((_, delta) => {
+    const frameSteps = Math.min(delta, 0.05) * 60;
+    const glide = 1 - Math.pow(0.88, frameSteps);
+    const turn = 1 - Math.pow(0.95, frameSteps);
+    camU.current += (scrollTarget.current - camU.current) * glide;
+    sway.current.x += (pointer.current.x - sway.current.x) * turn;
+    sway.current.y += (pointer.current.y - sway.current.y) * turn;
 
     sampleAt(track.pos, camU.current, p);
     sampleAt(track.side, camU.current, side);
@@ -312,15 +338,14 @@ function CameraRig({ track, camU, pointer }: { track: TrackPath; camU: React.Ref
       p.z + side.z * sway.current.x * 0.6
     );
     camera.lookAt(look.x, look.y + 0.35, look.z);
-  });
+  }, -1);
   return null;
 }
 
 /** Tells the loading screen the track is on screen (after its first frame). */
 function ReadySignal() {
   const sent = useRef(false);
-  const { gl, scene, camera } = useThree();
-  useFrame(() => {
+  useFrame(({ gl, scene, camera }) => {
     if (sent.current) return;
     sent.current = true;
     // prepare every shader now, behind the loading screen, instead of the
@@ -333,7 +358,12 @@ function ReadySignal() {
   return null;
 }
 
-function Scene({ gates, gateIds, lite }: { gates: number[]; gateIds: string[]; lite: boolean }) {
+function Scene({ gates, gateIds, lite, scrollTarget }: {
+  gates: number[];
+  gateIds: string[];
+  lite: boolean;
+  scrollTarget: React.RefObject<number>;
+}) {
   const track = useMemo(() => buildTrack(), []);
   const camU = useRef(0);
   const pointer = useRef({ x: 0, y: 0 });
@@ -342,7 +372,8 @@ function Scene({ gates, gateIds, lite }: { gates: number[]; gateIds: string[]; l
 
   useEffect(() => {
     function onMove(e: MouseEvent) {
-      pointer.current = { x: (e.clientX / window.innerWidth) * 2 - 1, y: (e.clientY / window.innerHeight) * 2 - 1 };
+      pointer.current.x = (e.clientX / window.innerWidth) * 2 - 1;
+      pointer.current.y = (e.clientY / window.innerHeight) * 2 - 1;
     }
     // Clicking empty space anywhere on the homepage fires a pulse — but
     // not when the click was meant for a link, button, photo, collage
@@ -353,7 +384,7 @@ function Scene({ gates, gateIds, lite }: { gates: number[]; gateIds: string[]; l
       pulseTrigger.current += 1;
       playSound("whoosh");
     }
-    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mousemove", onMove, { passive: true });
     window.addEventListener("click", onClick);
     return () => {
       window.removeEventListener("mousemove", onMove);
@@ -369,7 +400,7 @@ function Scene({ gates, gateIds, lite }: { gates: number[]; gateIds: string[]; l
       <hemisphereLight args={["#fff8ee", "#2a2622", 1.6]} />
       <directionalLight position={[4, 8, 6]} intensity={1.8} />
       <ReadySignal />
-      <CameraRig track={track} camU={camU} pointer={pointer} />
+      <CameraRig track={track} camU={camU} pointer={pointer} scrollTarget={scrollTarget} />
       <TrackLine track={track} glowRef={glowRef} lite={lite} />
       <Particles track={track} count={lite ? 180 : PARTICLES} />
       <Gates track={track} gates={gates} camU={camU} />
@@ -392,10 +423,10 @@ function Scene({ gates, gateIds, lite }: { gates: number[]; gateIds: string[]; l
  * screens) renders at a lower pixel ratio to stay smooth on phones.
  */
 export default function TrackScene({ lite = false }: { lite?: boolean }) {
-  const [gates, setGates] = useState<number[]>([]);
-  const [gateIds, setGateIds] = useState<string[]>([]);
+  const [{ gates, gateIds }, setLayout] = useState<{ gates: number[]; gateIds: string[] }>({ gates: [], gateIds: [] });
+  const scrollTarget = useRef(0);
   // nothing to draw while the tab is in the background
-  const [hidden, setHidden] = useState(false);
+  const [hidden, setHidden] = useState(() => document.hidden);
   useEffect(() => {
     const sync = () => setHidden(document.hidden);
     document.addEventListener("visibilitychange", sync);
@@ -407,22 +438,38 @@ export default function TrackScene({ lite = false }: { lite?: boolean }) {
   // screen. Re-measured whenever ScrollTrigger recalculates layout
   // (resize, fonts, pinned sections adding scroll distance).
   useEffect(() => {
-    function measure() {
-      const max = document.documentElement.scrollHeight - window.innerHeight;
-      if (max <= 0) return;
-      const sections = Array.from(document.querySelectorAll("main section")).slice(1);
-      setGateIds(sections.map((s) => s.id));
-      setGates(
-        sections.map((s) => {
-          const top = s.getBoundingClientRect().top + window.scrollY;
-          return Math.min(top / max, 1) * CAM_END + 0.004;
-        })
-      );
+    let maxScroll = 0;
+    function syncScroll() {
+      scrollTarget.current = maxScroll > 0
+        ? THREE.MathUtils.clamp(window.scrollY / maxScroll, 0, 1) * CAM_END
+        : 0;
     }
+    function measure() {
+      maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      syncScroll();
+      if (maxScroll <= 0) return;
+      const sections = Array.from(document.querySelectorAll("main section")).slice(1);
+      const scrollY = window.scrollY;
+      const gateIds = sections.map((section) => section.id);
+      const gates = sections.map((section) =>
+        Math.min((section.getBoundingClientRect().top + scrollY) / maxScroll, 1) * CAM_END + 0.004
+      );
+      setLayout((previous) => {
+        const unchanged = previous.gates.length === gates.length && gates.every((position, i) =>
+          Math.abs(position - previous.gates[i]) < 0.0001 && gateIds[i] === previous.gateIds[i]
+        );
+        return unchanged ? previous : { gates, gateIds };
+      });
+    }
+    const resize = new ResizeObserver(measure);
+    resize.observe(document.body);
     measure();
+    window.addEventListener("scroll", syncScroll, { passive: true });
     ScrollTrigger.addEventListener("refresh", measure);
     window.addEventListener("resize", measure);
     return () => {
+      resize.disconnect();
+      window.removeEventListener("scroll", syncScroll);
       ScrollTrigger.removeEventListener("refresh", measure);
       window.removeEventListener("resize", measure);
     };
@@ -431,7 +478,7 @@ export default function TrackScene({ lite = false }: { lite?: boolean }) {
   return createPortal(
     <div className="fixed inset-0 -z-10 pointer-events-none" aria-hidden="true">
       <Canvas frameloop={hidden ? "never" : "always"} camera={{ position: [0, CAM_HEIGHT, 0], fov: CAM_FOV, near: 0.1, far: 120 }} dpr={lite ? 1 : [1, 1.5]} gl={{ antialias: true, alpha: true, powerPreference: lite ? "low-power" : "high-performance" }}>
-        <Scene gates={gates} gateIds={gateIds} lite={lite} />
+        <Scene gates={gates} gateIds={gateIds} lite={lite} scrollTarget={scrollTarget} />
       </Canvas>
     </div>,
     document.body

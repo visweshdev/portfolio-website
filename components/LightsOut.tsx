@@ -31,6 +31,8 @@ export default function LightsOut() {
     ensureGsap();
     const lights = root.querySelectorAll<HTMLElement>("[data-light]");
     let finished = false;
+    let exit: gsap.core.Tween | undefined;
+    let stopWaitingForScene: (() => void) | undefined;
 
     // Lenis may already be running underneath — hold it still too.
     const stopTimer = window.setTimeout(() => lenisInstance.current?.stop(), 0);
@@ -38,8 +40,11 @@ export default function LightsOut() {
     function finish() {
       if (finished) return;
       finished = true;
+      stopWaitingForScene?.();
+      window.removeEventListener("keydown", skip);
+      root!.removeEventListener("click", skip);
       tl.kill();
-      gsap.to(root, {
+      exit = gsap.to(root, {
         yPercent: -100,
         duration: 0.7,
         ease: "power3.inOut",
@@ -67,11 +72,15 @@ export default function LightsOut() {
       if (!w.__sceneExpected || w.__sceneReady) return;
       tl.pause();
       const go = () => {
+        stopWaitingForScene?.();
+        tl.resume();
+      };
+      const cap = window.setTimeout(go, 1200);
+      stopWaitingForScene = () => {
         window.clearTimeout(cap);
         window.removeEventListener(SCENE_READY_EVENT, go);
-        if (!finished) tl.resume();
+        stopWaitingForScene = undefined;
       };
-      const cap = window.setTimeout(go, 6000);
       window.addEventListener(SCENE_READY_EVENT, go, { once: true });
     });
     tl.to({}, { duration: hold });
@@ -92,9 +101,11 @@ export default function LightsOut() {
 
     return () => {
       window.clearTimeout(stopTimer);
+      stopWaitingForScene?.();
       window.removeEventListener("keydown", skip);
       root.removeEventListener("click", skip);
       tl.kill();
+      exit?.kill();
     };
   }, []);
 

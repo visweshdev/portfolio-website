@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useSyncExternalStore } from "react";
+import { useCallback, useRef, useSyncExternalStore } from "react";
 import { SESSION_START } from "@/lib/sessionStart";
 
 function getServerSnapshot() {
@@ -20,17 +20,26 @@ function getServerSnapshot() {
  */
 export function useElapsedSinceStart(active: boolean): number {
   const cached = useRef(0);
-
-  return useSyncExternalStore(
-    (callback) => {
-      if (!active) return () => {};
-      const id = setInterval(() => {
-        cached.current = performance.now() - SESSION_START;
-        callback();
-      }, 250);
-      return () => clearInterval(id);
-    },
-    () => cached.current,
-    getServerSnapshot
-  );
+  const subscribe = useCallback((callback: () => void) => {
+    if (!active) return () => {};
+    let timer: ReturnType<typeof setInterval> | undefined;
+    const tick = () => {
+      cached.current = performance.now() - SESSION_START;
+      callback();
+    };
+    const sync = () => {
+      clearInterval(timer);
+      if (document.hidden) return;
+      tick();
+      timer = setInterval(tick, 250);
+    };
+    sync();
+    document.addEventListener("visibilitychange", sync);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", sync);
+    };
+  }, [active]);
+  const getSnapshot = useCallback(() => cached.current, []);
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }

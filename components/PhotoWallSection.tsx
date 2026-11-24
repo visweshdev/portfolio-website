@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CATEGORY_LABEL, type Photo } from "@/data/photography";
 import PhotoLightbox from "@/components/PhotoLightbox";
 import { playSound } from "@/lib/sound";
@@ -24,14 +24,27 @@ const PhotoWall = dynamic(() => import("@/components/three/PhotoWall"), { ssr: f
 export default function PhotoWallSection({ photos }: { photos: Photo[] }) {
   const rich = useRichMotion();
   const [open, setOpen] = useState<Photo | null>(null);
+  const [loadWall, setLoadWall] = useState(false);
+  const wallRef = useRef<HTMLDivElement>(null);
   const withImages = photos.filter((p) => p.src);
+
+  useEffect(() => {
+    if (!rich || loadWall || !wallRef.current) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      setLoadWall(true);
+      observer.disconnect();
+    }, { rootMargin: "700px 0px" });
+    observer.observe(wallRef.current);
+    return () => observer.disconnect();
+  }, [rich, loadWall]);
 
   return (
     <div role="region" aria-label="Photo wall" className="photo-wall mt-12">
       <p className="label-mono text-fg-subtle mb-3">DRAG TO LOOK ALONG THE WALL · CLICK A PRINT TO OPEN IT</p>
       {/* fixed height reserved up front, so nothing below jumps when the 3D chunk arrives */}
-      <div className="h-[70svh] min-h-[420px] rounded-2xl border border-fg-faint/25 bg-bg-raised/40 overflow-hidden">
-        {rich && <PhotoWall photos={photos} onOpen={setOpen} />}
+      <div ref={wallRef} className="h-[70svh] min-h-[420px] rounded-2xl border border-fg-faint/25 bg-bg-raised/40 overflow-hidden">
+        {rich && loadWall && <PhotoWall photos={withImages} onOpen={setOpen} paused={open !== null} />}
       </div>
 
       <ul className="mt-4 flex flex-wrap gap-2">

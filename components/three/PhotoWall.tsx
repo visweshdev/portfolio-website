@@ -29,6 +29,7 @@ function Polaroid({
   hovered,
   setHovered,
   drag,
+  elapsed,
   onOpen,
 }: {
   photo: Photo;
@@ -38,6 +39,7 @@ function Polaroid({
   hovered: number | null;
   setHovered: (i: number | null) => void;
   drag: React.RefObject<DragState>;
+  elapsed: React.RefObject<number>;
   onOpen: (photo: Photo) => void;
 }) {
   const group = useRef<THREE.Group>(null);
@@ -64,17 +66,19 @@ function Polaroid({
     return t;
   }, [texture]);
 
-  useFrame(({ clock }) => {
+  useEffect(() => () => map.dispose(), [map]);
+
+  useFrame((_, delta) => {
     const g = group.current;
     if (!g) return;
     const isHovered = hovered === index;
-    const t = clock.elapsedTime;
     const pull = isHovered ? 0.6 : 0; // hovered photo leans out toward you
     const r = RADIUS - pull;
-    g.position.x += (Math.sin(angle) * r - g.position.x) * 0.12;
-    g.position.z += (-Math.cos(angle) * r - g.position.z) * 0.12;
-    g.position.y = baseY + Math.sin(t * 0.7 + index) * 0.06;
-    const s = THREE.MathUtils.lerp(g.scale.x, isHovered ? 1.06 : 1, 0.12);
+    const ease = 1 - Math.pow(0.88, Math.min(delta, 0.05) * 60);
+    g.position.x += (Math.sin(angle) * r - g.position.x) * ease;
+    g.position.z += (-Math.cos(angle) * r - g.position.z) * ease;
+    g.position.y = baseY + Math.sin(elapsed.current * 0.7 + index) * 0.06;
+    const s = THREE.MathUtils.lerp(g.scale.x, isHovered ? 1.06 : 1, ease);
     g.scale.setScalar(s);
   });
 
@@ -125,22 +129,26 @@ function Wall({
     photos.map((p) => textureUrl(p.src as string))
   );
   const [hovered, setHovered] = useState<number | null>(null);
-  const { camera } = useThree();
+  const camera = useThree((state) => state.camera);
+  const elapsed = useRef(0);
   const limit = ((photos.length - 1) / 2) * SPACING;
 
-  useFrame(({ clock }, delta) => {
+  useFrame((_, delta) => {
+    const step = Math.min(delta, 0.05);
+    elapsed.current += step;
     const d = drag.current;
     if (!d.down) {
       // inertia after release, then a slow idle drift
-      yaw.current += d.velocity;
-      d.velocity *= Math.pow(0.9, delta * 60);
+      const decay = Math.pow(0.9, step * 60);
+      yaw.current += d.velocity * (1 - decay) / 0.1;
+      d.velocity *= decay;
       if (Math.abs(d.velocity) < 0.0001 && hovered === null) {
-        yaw.current += Math.sin(clock.elapsedTime * 0.25) * 0.0008;
+        yaw.current += Math.sin(elapsed.current * 0.25) * 0.0008 * step * 60;
       }
     }
     yaw.current = THREE.MathUtils.clamp(yaw.current, -limit, limit);
     camera.rotation.set(0, -yaw.current, 0);
-  });
+  }, -1);
 
   return (
     <>
@@ -154,6 +162,7 @@ function Wall({
           hovered={hovered}
           setHovered={setHovered}
           drag={drag}
+          elapsed={elapsed}
           onOpen={onOpen}
         />
       ))}
@@ -170,17 +179,20 @@ function Wall({
  * Decorative duplicate of the grid below, which stays the accessible,
  * keyboard-friendly way to browse — hence aria-hidden.
  */
-export default function PhotoWall({ photos, onOpen }: { photos: Photo[]; onOpen: (p: Photo) => void }) {
+export default function PhotoWall({ photos, onOpen, paused }: {
+  photos: Photo[];
+  onOpen: (p: Photo) => void;
+  paused: boolean;
+}) {
   const wrapRef = useRef<HTMLDivElement>(null);
-  const [inView, setInView] = useState(true);
+  const [inView, setInView] = useState(false);
   const drag = useRef<DragState>({ down: false, startX: 0, lastX: 0, moved: 0, velocity: 0 });
   const yaw = useRef(0);
-  const withImages = photos.filter((p) => p.src);
 
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
-    const observer = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), { rootMargin: "100px 0px" });
+    const observer = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting));
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
@@ -227,10 +239,10 @@ export default function PhotoWall({ photos, onOpen }: { photos: Photo[]; onOpen:
         camera={{ position: [0, 0, 0], fov: 50, near: 0.1, far: 40 }}
         dpr={[1, 1.5]}
         gl={{ antialias: true, alpha: true }}
-        frameloop={inView ? "always" : "demand"}
+        frameloop={inView && !paused ? "always" : "demand"}
       >
         <Suspense fallback={null}>
-          <Wall photos={withImages} drag={drag} yaw={yaw} onOpen={onOpen} />
+          <Wall photos={photos} drag={drag} yaw={yaw} onOpen={onOpen} />
         </Suspense>
       </Canvas>
     </div>

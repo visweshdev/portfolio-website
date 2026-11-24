@@ -20,16 +20,13 @@ import {
 // three.js is its own chunk, fetched only when the 3D track will run.
 const TrackScene = dynamic(() => import("@/components/three/TrackScene"), {
   ssr: false,
-  loading: () => null,
+  loading: StaticCurve,
 });
 
 const HEADLINE = ["BUILD.", "LEARN.", "CAPTURE."];
 const noop = () => () => {};
 
-/** The signature curve as a flat, still SVG — shown instead of the
- *  three.js scene on touch devices and under reduced motion, where the
- *  3D version's cursor-driven interaction has nothing to respond to.
- *  Also what renders server-side, before the pointer type is known. */
+/** The signature curve, visible before the 3D scene loads and under reduced motion. */
 function StaticCurve() {
   return (
     <svg
@@ -63,10 +60,18 @@ function StaticCurve() {
  *  Quietly reinforces the "speed/precision" identity without leaning
  *  on any team's branding. */
 function SessionClock() {
+  const clockRef = useRef<HTMLParagraphElement>(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    if (!clockRef.current) return;
+    const observer = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting));
+    observer.observe(clockRef.current);
+    return () => observer.disconnect();
+  }, []);
   // Deliberately NOT gated by prefers-reduced-motion — this is a text
   // value ticking in place, not a visual motion effect, so pausing it
   // there would just make the clock look broken for no benefit.
-  const elapsed = useElapsedSinceStart(true);
+  const elapsed = useElapsedSinceStart(visible);
 
   const totalCs = Math.floor(elapsed / 10);
   const mm = String(Math.floor(totalCs / 6000)).padStart(2, "0");
@@ -74,7 +79,7 @@ function SessionClock() {
   const cs = String(totalCs % 100).padStart(2, "0");
 
   return (
-    <p className="label-mono tabular-nums" aria-hidden="true">
+    <p ref={clockRef} className="label-mono tabular-nums" aria-hidden="true">
       LAP {mm}:{ss}.{cs}
     </p>
   );

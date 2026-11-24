@@ -146,7 +146,7 @@ export default function RacingCar({
   const wheels = useMemo<WheelRig>(() => ({ spin: [], steer: [] }), []);
   const light = useRef<THREE.MeshBasicMaterial>(null);
   const rig = useMemo(() => emptyRig(), []);
-  const { camera } = useThree();
+  const camera = useThree((state) => state.camera);
 
   const v = useMemo(
     () => ({

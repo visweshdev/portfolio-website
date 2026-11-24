@@ -68,8 +68,8 @@ function Floater({
   children: React.ReactNode;
 }) {
   const ref = useRef<THREE.Group>(null);
-  const glow = useRef<THREE.MeshBasicMaterial>(null);
-  const { camera } = useThree();
+  const glow = useRef<THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>>(null);
+  const camera = useThree((state) => state.camera);
   const state = useRef({ hover: 0, isHovered: false, spin: 0, spinVel: 0, flash: 0 });
 
   useEffect(() => {
@@ -132,17 +132,20 @@ function Floater({
     const targetX = pointer.current.y * 0.4;
     g.rotation.y += (targetY - g.rotation.y) * 0.08;
     g.rotation.x += (targetX - g.rotation.x) * 0.05;
-    if (glow.current) glow.current.opacity = st.hover * 0.12 + st.flash * 0.35;
+    if (glow.current) {
+      const opacity = st.hover * 0.12 + st.flash * 0.35;
+      glow.current.visible = opacity > 0.0001;
+      glow.current.material.opacity = opacity;
+    }
   });
 
   return (
     <group ref={ref} position={position} scale={scale}>
       {children}
       {/* amber glow behind the model on hover / click */}
-      <mesh position={[0, 0, -0.3]}>
+      <mesh ref={glow} position={[0, 0, -0.3]}>
         <sphereGeometry args={[0.95, 16, 16]} />
         <meshBasicMaterial
-          ref={glow}
           color={ACCENT}
           transparent
           opacity={0}
@@ -362,7 +365,7 @@ function cameraAnchor(w: number, h: number) {
 }
 
 export default function HeroObjects({ track, pointer }: { track: TrackPath; pointer: PointerRef }) {
-  const { size } = useThree();
+  const size = useThree((state) => state.size);
 
   // Project each screen anchor out into the world from the starting camera.
   const at = useMemo(() => {
