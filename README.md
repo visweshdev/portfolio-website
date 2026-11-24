@@ -156,7 +156,8 @@ components/                One component per file, PascalCase
   DraggablePiece.tsx           Pointer-events-based drag behavior used by the collages
   three/                      three.js scenes: TrackScene (homepage track), trackPath, HeroObjects,
                                RacingCar (car + driver logic), Driver (the low-poly figure),
-                               FinishLine, PhotoWall
+                               FinishLine
+  PhotoWallSection.tsx         CSS 3D photography wall with draggable prints
   LightsOut.tsx                F1 start-lights loading screen
   SplitHeading.tsx, ScrambleLabel.tsx, FlowStrip.tsx   Word-by-word headlines, decoding labels, animated pipelines
   HorizontalRail.tsx, SkillsTicker.tsx                 Pinned sideways project rail, scroll-reactive ticker
@@ -254,7 +255,9 @@ component to change content.
   particles and no wide halo glow, and the scene stops drawing while the
   tab is hidden. All 3D shaders are prepared behind the loading screen so
   nothing stalls mid-scroll, and nothing on the page uses backdrop blur
-  (re-blurring over a moving 3D background makes phones stutter); and the photo wall uses small resized textures from Next's image optimizer.
+  (re-blurring over a moving 3D background makes phones stutter).
+- The photo wall renders as HTML and CSS with pre-sized WebP prints. Its
+  motion pauses when the wall is offscreen or the lightbox is open.
 - The glow on the 3D track is layered additive tubes rather than a
   post-processing pass, so there's no extra render target per frame.
 - The hero's 3D render loop pauses automatically (via `IntersectionObserver`)

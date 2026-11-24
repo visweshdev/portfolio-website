@@ -271,13 +271,84 @@ button:focus-visible,
 .photo-wall {
   display: none;
 }
-@media (pointer: fine) and (prefers-reduced-motion: no-preference) {
-  html.js .photo-wall {
-    display: block;
+@supports (perspective: calc(50cqh / tan(25deg))) {
+  @media (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    html.js .photo-wall {
+      display: block;
+    }
+    html.js .photo-grid {
+      display: none;
+    }
   }
-  html.js .photo-grid {
-    display: none;
-  }
+}
+
+.photo-wall-viewport {
+  container-type: size;
+  overflow: clip;
+  touch-action: pan-y;
+}
+
+.photo-wall-perspective,
+.photo-wall-orbit {
+  position: absolute;
+  inset: 0;
+}
+
+.photo-wall-perspective {
+  /* Same 50° vertical field of view and 7-unit viewing distance. */
+  --photo-wall-distance: calc(50cqh / tan(25deg));
+  --photo-wall-unit: calc(var(--photo-wall-distance) / 7);
+  perspective: var(--photo-wall-distance);
+}
+
+.photo-wall-orbit {
+  transform: translateZ(var(--photo-wall-distance));
+  transform-style: preserve-3d;
+}
+
+.photo-wall-print {
+  --print-depth: -7;
+  --print-scale: 1;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(2.3 * var(--photo-wall-unit));
+  height: calc(2.85 * var(--photo-wall-unit));
+  background: #d9d6ce;
+  backface-visibility: hidden;
+  translate: -50% -50%;
+  transform: rotateY(var(--print-angle))
+    translateZ(calc(var(--print-depth) * var(--photo-wall-unit)))
+    translateY(calc(var(--print-height) * var(--photo-wall-unit)))
+    rotateZ(var(--print-rotation)) scale(var(--print-scale));
+  transition: transform 160ms ease-out;
+  animation: photo-wall-float 9s ease-in-out var(--print-delay) infinite paused;
+}
+
+.photo-wall-viewport:not([data-dragging]) .photo-wall-print:is(:hover, :focus-visible) {
+  --print-depth: -6.4;
+  --print-scale: 1.06;
+}
+
+.photo-wall-print:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 4px;
+}
+
+.photo-wall-print > span {
+  position: absolute;
+  inset: calc(0.055 * var(--photo-wall-unit)) calc(0.125 * var(--photo-wall-unit)) calc(0.295 * var(--photo-wall-unit));
+  background: #292622 center / cover no-repeat;
+  pointer-events: none;
+}
+
+.photo-wall-viewport[data-animating] .photo-wall-print {
+  animation-play-state: running;
+}
+
+@keyframes photo-wall-float {
+  25% { translate: -50% calc(-50% - 0.06 * var(--photo-wall-unit)); }
+  75% { translate: -50% calc(-50% + 0.06 * var(--photo-wall-unit)); }
 }
 
 /* ---------------------------------- */
